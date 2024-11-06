@@ -791,13 +791,10 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
     CLFlt           *reL, *reR;
     ModelInfo       *m;
-    CLFlt           readErrProbs[9];
+
     int             index;
 
     m = &modelSettings[division];
-    //if (m->readErrRate != NULL) {
-    //    rER=*GetParamVals (m->readErrRate, chain, state[chain]);
-    //}
 
     /* flip space so that we do not overwrite old cond likes */
     FlipCondLikeSpace (m, chain, p->index);
@@ -818,14 +815,10 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         {
         shortCut |= 1;
         lState = m->termState[p->left->index];
+        tiPL = pL;
 
-        if (m->readErrRate==NULL)
-            tiPL = pL;
-        else 
-            {
-            reL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-            tiPL = reL;
-            }
+        if (m->readErrRate != NULL)
+            tiPL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
 
         for (k=j=0; k<m->numRateCats; k++)
             {
@@ -849,13 +842,12 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         shortCut |= 2;
         rState = m->termState[p->right->index];
 
-        if (m->readErrRate==NULL)
-            tiPR = pR;
-        else 
-            {
-            reR = m->readErrCls[m->readErrClIndex[chain][p->right->index]];
-            tiPR=reR;  
-            }
+        tiPR = pR;
+
+        if (m->readErrRate != NULL)
+            tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
+
+
         for (k=j=0; k<m->numRateCats; k++)
             {
             for (i=0; i<3; i++)
@@ -960,7 +952,6 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
 
     return NO_ERROR;
 }
-
 
 
 /*----------------------------------------------------------------
@@ -8553,13 +8544,15 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
                         }
                     else
                         {
-                        TIME(m->CondLikeDown (p, d, chain),CPUCondLikeDown);                        
                         /*
                         MrBayesPrint("fresh condLikes at node %d: \n", p->index);
                         for (int i=0; i<m->condLikeLength; i++)
                                 MrBayesPrint("%3.3f  ", m->condLikes[m->condLikeIndex[chain][p->index]][i]);
                         MrBayesPrint("\n");
                         */
+                        TIME(m->CondLikeDown (p, d, chain),CPUCondLikeDown);
+                        if (p->length > 1) 
+                            MrBayesPrint("leng prob\n");
                         }
                     }
                 else
@@ -10267,10 +10260,10 @@ int TiProbs_Gen (TreeNode *p, int division, int chain)
             }
         }
 
-    for (index=0; index<m->tiProbLength; index++)
-        if (tiP[index] > 1.0 || tiP[index] < 0.0)
-            MrBayesPrint("bad ti prob... \n");
-
+//    for (index=0; index<m->tiProbLength; index++)
+//        if (tiP[index] > 1.0 || tiP[index] < 0.0)
+//            MrBayesPrint("bad ti prob... \n");
+//
 
 #   if 0
     printf ("v = %lf (%d)\n", t, p->index);
