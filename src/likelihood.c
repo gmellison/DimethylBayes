@@ -791,14 +791,13 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
     CLFlt           *reL, *reR;
     ModelInfo       *m;
-    MrBFlt          rER;
     CLFlt           readErrProbs[9];
     int             index;
 
     m = &modelSettings[division];
-    if (m->readErrRate != NULL) {
-        rER=*GetParamVals (m->readErrRate, chain, state[chain]);
-    }
+    //if (m->readErrRate != NULL) {
+    //    rER=*GetParamVals (m->readErrRate, chain, state[chain]);
+    //}
 
     /* flip space so that we do not overwrite old cond likes */
     FlipCondLikeSpace (m, chain, p->index);
@@ -812,15 +811,6 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
 
-       //for (int i=0; i<m->tiProbLength; i++)
-    //    {
-    //    if (pL[i] > 1.0 || pL[i] < 0.0)
-    //        MrBayesPrint("well here we are \n");
-    //    
-    //    if (pR[i] > 1.0 || pR[i] < 0.0)
-    //        MrBayesPrint("well here we are \n");
-    //    }
-
     /* find likelihoods of site patterns for left branch if terminal */
     shortCut = 0;
 #   if !defined (DEBUG_NOSHORTCUTS)
@@ -828,10 +818,15 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         {
         shortCut |= 1;
         lState = m->termState[p->left->index];
-        //tiPL = pL;
 
-        reL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-        tiPL = reL;
+        if (m->readErrRate==NULL)
+            tiPL = pL;
+        else 
+            {
+            reL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
+            tiPL = reL;
+            }
+
         for (k=j=0; k<m->numRateCats; k++)
             {
             for (i=0; i<3; i++)
@@ -853,9 +848,14 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         {
         shortCut |= 2;
         rState = m->termState[p->right->index];
-        // tiPR = pR;
-        reR = m->readErrCls[m->readErrClIndex[chain][p->right->index]];
-        tiPR=reR;  
+
+        if (m->readErrRate==NULL)
+            tiPR = pR;
+        else 
+            {
+            reR = m->readErrCls[m->readErrClIndex[chain][p->right->index]];
+            tiPR=reR;  
+            }
         for (k=j=0; k<m->numRateCats; k++)
             {
             for (i=0; i<3; i++)
@@ -6834,7 +6834,7 @@ int Likelihood_Dimethyl (TreeNode *p, int division, int chain, MrBFlt *lnL, int 
                 }
             else    
                 {
-                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
+                (*lnL) += (lnScaler[c] + log(like)) * nSitesOfPat[c];
                 }
             }       
         }

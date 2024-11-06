@@ -12377,6 +12377,7 @@ int PrintSiteRates_Gen (TreeNode *p, int division, int chain)
     /* find base frequencies */
     if (m->dataType == DIMETHYL)
         {
+        /* base freqs aren't a parameter in dimethyl model, so set them up manually  */
         bs=SafeMalloc(m->numModelStates * sizeof(MrBFlt));
         if (!bs) return (ERROR);
         dimRates =  GetParamVals (m->dimethylRate, chain, state[chain]);
