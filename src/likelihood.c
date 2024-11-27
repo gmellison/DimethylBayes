@@ -40,7 +40,6 @@
 #include "mbbeagle.h"
 #include "model.h"
 #include "utils.h"
-#include "pairwise.h"
 #include "command.h"
 #define LIKE_EPSILON                1.0e-300
 
@@ -789,10 +788,8 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
 {
     int             c, h, i, j, k, shortCut, *lState=NULL, *rState=NULL;
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
-    CLFlt           *reL, *reR;
     ModelInfo       *m;
 
-    int             index;
     double          rER;
     m = &modelSettings[division];
 

@@ -40,7 +40,6 @@
 #include "model.h"
 #include "sumpt.h"
 #include "utils.h"
-#include "pairwise.h"
 
 /* We only do proper command line parsing if we're on a system where the
    unistd.h header is available */
@@ -677,7 +676,6 @@ int InitializeMrBayes (void)
     /* Prior model settings */
     defaultModel.dataType = DNA;                        /* datatype                                     */
     defaultModel.coding = 0;                            /* ascertainment bias                           */
-    defaultModel.usePairwise=NO;
     strcpy(defaultModel.codingString, "All");           /* ascertainment bias string                    */
     strcpy(defaultModel.nucModel, "4by4");              /* nucleotide model                             */
     strcpy(defaultModel.nst, "1");                      /* number of substitution types                 */

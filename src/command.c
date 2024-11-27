@@ -40,7 +40,6 @@
 #include "mbbeagle.h"
 #include "model.h"
 #include "mcmc.h"
-#include "pairwise.h"
 #include "sumpt.h"
 #include "utils.h"
 
@@ -134,8 +133,6 @@ int      DoTranslate (void);
 int      DoTranslateParm (char *parmName, char *tkn);
 int      DoTree (void);
 int      DoTreeParm (char *parmName, char *tkn);
-int      DoTripletLogLike(void);
-int      DoPairwiseLogLike(void);
 int      DoUserTree (void);
 int      DoUserTreeParm (char *parmName, char *tkn);
 int      DoVersion (void);
@@ -363,9 +360,6 @@ CmdType     commands[] =
             { 59,        "Usertree", YES,        DoUserTree,  1,                                                                                            {203},        8,                                 "Defines a single user tree",  IN_CMD, HIDE },
             { 60,         "Version",  NO,         DoVersion,  0,                                                                                             {-1},       32,                                      "Shows program version",  IN_CMD, SHOW },
             { 61,      "Compareref",  NO,     DoCompRefTree,  7,                                                                    {127,128,129,130,221,222,223},       36,                   "Compares the tree to the reference trees",  IN_CMD, HIDE },
-            { 62,    "EstQPairwise",  NO,    DoEstQPairwise,  0,                                                                                             {-1},       32,                      "Computes pairwise gtr param estimates",  IN_CMD, HIDE },
-            { 63, "PairwiseLogLike",  NO, DoPairwiseLogLike,  3,                                                                                        {284,285,286},       36,                                     "Computes pairwise nqll",  IN_CMD, HIDE },
-            { 63,  "TripletLogLike",  NO,  DoTripletLogLike,  3,                                                                                        {284,285,286},       36,                                "Computes triplet-based nqll",  IN_CMD, HIDE },
  
             /* NOTE: If you add a command here, make certain to change NUMCOMMANDS (above, in this file) appropriately! */
             { 999,             NULL,  NO,              NULL,  0,                                                                                             {-1},       32,                                                           "",  IN_CMD, HIDE }  
@@ -14834,10 +14828,6 @@ void SetUpParms (void)
     PARAM (281, "Rootfreqpr",     DoPrsetParm,       "Dirichlet|Fixed|\0"); //SK
     PARAM (282, "Statefrmod",     DoLsetParm,        "Stationary|Directional|Mixed|\0"); //SK
     PARAM (283, "Methylrevmatpr",   DoPrsetParm,     "Dirichlet|Fixed|\0"); //SK
-    PARAM (284, "Dist",           DoPwSetParm,       "\0"); 
-    PARAM (285, "Alpha",          DoPwSetParm,       "\0"); 
-    PARAM (286, "Relrates",       DoPwSetParm,       "\0"); 
-    PARAM (287, "Pairwise",       DoLsetParm,        "Yes|No|\0"); 
     PARAM (288, "Dimethylratepr",  DoPrsetParm,      "Dirichlet|Fixed|\0"); 
     PARAM (289, "Dimethylrate",   DoLinkParm,        "\0"); 
     PARAM (290, "Readerrpr",      DoPrsetParm,       "Uniform|Fixed|\0"); 

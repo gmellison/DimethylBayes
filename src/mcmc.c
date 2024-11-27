@@ -52,7 +52,6 @@
 #include "proposal.h"
 #include "sumpt.h"
 #include "utils.h"
-#include "pairwise.h"
 #if defined(__MWERKS__)
 #include "SIOUX.h"
 #endif
@@ -4806,16 +4805,6 @@ void FreeChainMemory (void)
         FreeBestChainVariables();
         memAllocs[ALLOC_BEST] = NO;
         }
-    if (memAllocs[ALLOC_PAIRWISE] == YES) 
-        {
-        FreePairwise();
-        memAllocs[ALLOC_PAIRWISE] = NO;
-        }
-    if (memAllocs[ALLOC_TRIPLES] == YES) 
-        {
-        FreeTriples();
-        memAllocs[ALLOC_TRIPLES] = NO;
-        }
 }
 
 
@@ -5731,7 +5720,7 @@ int InitAugmentedModels (void)
 int InitChainCondLikes (void)
 {
     int         c, d, i, j, k, s, t, numReps, condLikesUsed, nIntNodes, nNodes,
-                clIndex, tiIndex, scalerIndex, indexStep, pwIdx, tripIdx;
+                clIndex, tiIndex, scalerIndex, indexStep;
     BitsLong    *charBits;
     CLFlt       *cL;
     ModelInfo   *m;
@@ -16141,9 +16130,6 @@ int RunChain (RandLong *seed)
     MrBFlt      stepLengthSS=0, meanSS, varSS, *tempX;
     char        ckpFileName[220], bkupFileName[234];
 
-    MrBFlt      lnLikeAlMove, lnLikeAlCurr;
-    int         hybridAlphaStep=NO;
-    int         numAlphaHybridSteps=0;
 #   if defined (BEAGLE_ENABLED)
 #       ifdef DEBUG_BEAGLE
     int         beagleScalingSchemeOld;
