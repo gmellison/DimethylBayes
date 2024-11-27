@@ -106,7 +106,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_mb_OBJECTS = mb-bayes.$(OBJEXT) mb-best.$(OBJEXT) \
 	mb-command.$(OBJEXT) mb-likelihood.$(OBJEXT) \
 	mb-mbbeagle.$(OBJEXT) mb-mcmc.$(OBJEXT) mb-model.$(OBJEXT) \
-	mb-pairwise.$(OBJEXT) mb-proposal.$(OBJEXT) mb-sumpt.$(OBJEXT) \
+	mb-proposal.$(OBJEXT) mb-sumpt.$(OBJEXT) \
 	mb-utils.$(OBJEXT)
 mb_OBJECTS = $(am_mb_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -131,7 +131,7 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/mb-bayes.Po ./$(DEPDIR)/mb-best.Po \
 	./$(DEPDIR)/mb-command.Po ./$(DEPDIR)/mb-likelihood.Po \
 	./$(DEPDIR)/mb-mbbeagle.Po ./$(DEPDIR)/mb-mcmc.Po \
-	./$(DEPDIR)/mb-model.Po ./$(DEPDIR)/mb-pairwise.Po \
+	./$(DEPDIR)/mb-model.Po \
 	./$(DEPDIR)/mb-proposal.Po ./$(DEPDIR)/mb-sumpt.Po \
 	./$(DEPDIR)/mb-utils.Po
 am__mv = mv -f
@@ -304,8 +304,6 @@ mb_SOURCES = \
 	mcmc.h \
 	model.c \
 	model.h \
-	pairwise.c \
-	pairwise.h \
 	proposal.c \
 	proposal.h \
 	sumpt.c \
@@ -424,7 +422,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-mbbeagle.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-mcmc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-model.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-pairwise.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-proposal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-sumpt.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mb-utils.Po@am__quote@ # am--include-marker
@@ -546,20 +543,6 @@ mb-model.obj: model.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='model.c' object='mb-model.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -c -o mb-model.obj `if test -f 'model.c'; then $(CYGPATH_W) 'model.c'; else $(CYGPATH_W) '$(srcdir)/model.c'; fi`
-
-mb-pairwise.o: pairwise.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -MT mb-pairwise.o -MD -MP -MF $(DEPDIR)/mb-pairwise.Tpo -c -o mb-pairwise.o `test -f 'pairwise.c' || echo '$(srcdir)/'`pairwise.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mb-pairwise.Tpo $(DEPDIR)/mb-pairwise.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='pairwise.c' object='mb-pairwise.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -c -o mb-pairwise.o `test -f 'pairwise.c' || echo '$(srcdir)/'`pairwise.c
-
-mb-pairwise.obj: pairwise.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -MT mb-pairwise.obj -MD -MP -MF $(DEPDIR)/mb-pairwise.Tpo -c -o mb-pairwise.obj `if test -f 'pairwise.c'; then $(CYGPATH_W) 'pairwise.c'; else $(CYGPATH_W) '$(srcdir)/pairwise.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mb-pairwise.Tpo $(DEPDIR)/mb-pairwise.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='pairwise.c' object='mb-pairwise.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -c -o mb-pairwise.obj `if test -f 'pairwise.c'; then $(CYGPATH_W) 'pairwise.c'; else $(CYGPATH_W) '$(srcdir)/pairwise.c'; fi`
 
 mb-proposal.o: proposal.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mb_CFLAGS) $(CFLAGS) -MT mb-proposal.o -MD -MP -MF $(DEPDIR)/mb-proposal.Tpo -c -o mb-proposal.o `test -f 'proposal.c' || echo '$(srcdir)/'`proposal.c
@@ -736,7 +719,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/mb-mbbeagle.Po
 	-rm -f ./$(DEPDIR)/mb-mcmc.Po
 	-rm -f ./$(DEPDIR)/mb-model.Po
-	-rm -f ./$(DEPDIR)/mb-pairwise.Po
 	-rm -f ./$(DEPDIR)/mb-proposal.Po
 	-rm -f ./$(DEPDIR)/mb-sumpt.Po
 	-rm -f ./$(DEPDIR)/mb-utils.Po
@@ -792,7 +774,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/mb-mbbeagle.Po
 	-rm -f ./$(DEPDIR)/mb-mcmc.Po
 	-rm -f ./$(DEPDIR)/mb-model.Po
-	-rm -f ./$(DEPDIR)/mb-pairwise.Po
 	-rm -f ./$(DEPDIR)/mb-proposal.Po
 	-rm -f ./$(DEPDIR)/mb-sumpt.Po
 	-rm -f ./$(DEPDIR)/mb-utils.Po
