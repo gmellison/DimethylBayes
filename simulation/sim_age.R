@@ -108,7 +108,6 @@ for (tax in taxa) {
                 tree_dm$tip.label <- tax_names[1:tax]
                 write.tree(tree_dm, cr_tree_f)
             }
-            edgelabels(tree_dm$edge.length)
         }
     }
 }
@@ -153,7 +152,7 @@ for (cr in crs) {
                         l <- stringr::str_replace_all(l, "\\.m", "\\.m\\.nc")
                         writeLines(l, fc)
                         close(fc)
-                        run_mrb("../mb", nex_nc, sprintf("%s/%s.log", out_dir, fname_methyl_nc))
+                        run_mrb("./mb", nex_nc, sprintf("%s/%s.log", out_dir, fname_methyl_nc))
                     }
                     s <- s + 1
                 }

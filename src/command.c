@@ -49,7 +49,7 @@
 
 
 #define NUMCOMMANDS                     62 + 3    /* The total number of commands in the program  */
-#define NUMPARAMS                       291   /* The total number of parameters  */
+#define NUMPARAMS                       286   /* The total number of parameters  */
 #define PARAM(i, s, f, l)               p->string = s;    \
                                         p->fp = f;        \
                                         p->valueList = l; \
@@ -314,7 +314,7 @@ CmdType     commands[] =
             { 20,            "Help", YES,            DoHelp,  1,                                                                                             {50},    16416,                  "Provides detailed description of commands",  IN_CMD, SHOW },
             { 21,         "Include", YES,         DoInclude,  1,                                                                                             {46},    49152,                                             "Includes sites",  IN_CMD, SHOW },
             { 22,            "Link",  NO,            DoLink, 31,  {55,56,57,58,59,60,61,62,63,72,73,74,75,76,105,118,193,194,195,196,197,242,243,252,253,255,256,
-                                                                                                                                                     270,273,274,289},        4,               "Links parameters across character partitions",  IN_CMD, SHOW },
+                                                                                                                                                     270,273,274,284},        4,               "Links parameters across character partitions",  IN_CMD, SHOW },
             { 23,             "Log",  NO,             DoLog,  5,                                                                                 {85,86,87,88,89},        4,                               "Logs screen output to a file",  IN_CMD, SHOW },
             { 24,            "Lset",  NO,            DoLset, 22,                         {28,29,30,31,32,33,34,40,51,52,53,90,91,131,188,189,276,277,280,282,287},        4,                "Sets the parameters of the likelihood model",  IN_CMD, SHOW },
             { 25,          "Manual",  NO,          DoManual,  1,                                                                                            {126},       36,                  "Prints a command reference to a text file",  IN_CMD, SHOW },
@@ -328,7 +328,7 @@ CmdType     commands[] =
             { 31,       "Partition",  NO,       DoPartition,  1,                                                                                             {16},        4,                              "Assigns a character partition",  IN_CMD, SHOW },
             { 32,            "Plot",  NO,            DoPlot,  6,                                                                        {106,107,108,109,224,225},       36,                        "Plots parameters from MCMC analysis",  IN_CMD, SHOW },
             { 33,           "Prset",  NO,           DoPrset, 46,  {35,36,37,38,39,41,42,43,44,54,64,67,68,69,70,71,77,100,101,102,103,104,110,111,117,120,121,133,
-                                                                                         168,172,173,174,183,184,185,218,241,246,247,251,254,269,271,272,288,290},        4,                         "Sets the priors for the parameters",  IN_CMD, SHOW },
+                                                                                         168,172,173,174,183,184,185,218,241,246,247,251,254,269,271,272,283,285},        4,                         "Sets the priors for the parameters",  IN_CMD, SHOW },
             { 34,         "Propset",  NO,         DoPropset,  1,                                                                                            {186},        4,          "Sets proposal probabilities and tuning parameters",  IN_CMD, SHOW },
             { 35,            "Quit",  NO,            DoQuit,  0,                                                                                             {-1},       32,                                          "Quits the program",  IN_CMD, SHOW },
             { 36,          "Report",  NO,          DoReport,  9,                                                            {122,123,124,125,134,135,136,192,217},        4,                 "Controls how model parameters are reported",  IN_CMD, SHOW },
@@ -363,6 +363,7 @@ CmdType     commands[] =
  
             /* NOTE: If you add a command here, make certain to change NUMCOMMANDS (above, in this file) appropriately! */
             { 999,             NULL,  NO,              NULL,  0,                                                                                             {-1},       32,                                                           "",  IN_CMD, HIDE }  
+
             };
 int                 inDataBlock, inForeignBlock, isInterleaved, isFirstMatrixRead, isFirstInterleavedBlock, 
                     taxonCount, fromI, toJ, everyK, foundDash, foundSlash, foundFirst, isMixed, whichPartition,
@@ -14827,10 +14828,9 @@ void SetUpParms (void)
     PARAM (280, "Statefreqmodel", DoLsetParm,        "Stationary|Directional|Mixed|\0"); //SK
     PARAM (281, "Rootfreqpr",     DoPrsetParm,       "Dirichlet|Fixed|\0"); //SK
     PARAM (282, "Statefrmod",     DoLsetParm,        "Stationary|Directional|Mixed|\0"); //SK
-    PARAM (283, "Methylrevmatpr",   DoPrsetParm,     "Dirichlet|Fixed|\0"); //SK
-    PARAM (288, "Dimethylratepr",  DoPrsetParm,      "Dirichlet|Fixed|\0"); 
-    PARAM (289, "Dimethylrate",   DoLinkParm,        "\0"); 
-    PARAM (290, "Readerrpr",      DoPrsetParm,       "Uniform|Fixed|\0"); 
+    PARAM (283, "Dimethylratepr",  DoPrsetParm,      "Dirichlet|Fixed|\0"); 
+    PARAM (284, "Dimethylrate",   DoLinkParm,        "\0"); 
+    PARAM (285, "Readerrpr",      DoPrsetParm,       "Uniform|Fixed|\0"); 
 
     /* NOTE: If a change is made to the parameter table, make certain you change
             NUMPARAMS (now 283; one more than last index) at the top of this file. */

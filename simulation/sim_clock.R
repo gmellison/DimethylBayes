@@ -134,7 +134,7 @@ for (cr in crs) {
                         l <- stringr::str_replace_all(l, "\\.m", "\\.m\\.nc")
                         writeLines(l, fc)
                         close(fc)
-                        run_mrb("../mb", nex_nc, sprintf("%s/%s.log", out_dir, fname_methyl_nc))
+                        run_mrb("./mb", nex_nc, sprintf("%s/%s.log", out_dir, fname_methyl_nc))
                     }
 
                     s <- s + 1

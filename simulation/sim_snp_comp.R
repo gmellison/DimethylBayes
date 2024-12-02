@@ -177,7 +177,7 @@ for (clock in clocks) {
                             setup_mrb(aln_dna_str, tax, sprintf("%d",site), model_lines, mcmc, 
                                       fname=fname_dna, datatype="dna", out_dir=out_dir,
                                       interleave=intlv) 
-                            run_mrb("../mb", sprintf("%s/%s.nex", out_dir, fname_dna), sprintf("%s/%s.log", out_dir, fname_dna))
+                            run_mrb("./mb", sprintf("%s/%s.nex", out_dir, fname_dna), sprintf("%s/%s.log", out_dir, fname_dna))
                         } 
                     }
                     s <- s + 1
