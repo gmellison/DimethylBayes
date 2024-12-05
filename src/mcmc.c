@@ -5859,8 +5859,6 @@ int InitChainCondLikes (void)
             }
         m->numTiProbs = (numLocalChains + 1) * nNodes;
 
-        MrBayesPrint("tiProbLength: %d , numTiProbs: %d\n",m->tiProbLength, m->numTiProbs);
-
         /* set info about eigen systems */
         if (InitEigenSystemInfo (m) == ERROR)
             return (ERROR);
@@ -6017,7 +6015,6 @@ int InitChainCondLikes (void)
         if (m->useBeagle == NO)
             {
 
-            MrBayesPrint("non-beagle alloc condLikes -- numCondLikes = %d, condLikeLength = %d \n", m->numCondLikes, m->condLikeLength);
             /* allocate cond like space */
             m->condLikes = (CLFlt**) SafeMalloc(m->numCondLikes * sizeof(CLFlt*));
             if (!m->condLikes)
