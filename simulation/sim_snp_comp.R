@@ -7,9 +7,9 @@ library(phangorn)
 library(ape)
 library(phybase)
 library(TreeTools)
-library(ggplot2)
+# library(ggplot2)
 
-
+print("running snp comp")
 source("functions.R")
 
 out_dir <- "snp_comp"
@@ -69,7 +69,7 @@ sites <- c(1000, 10000, 100000)
 j <- 1
 taxa <- c(4, 20)
 bl <- 0.1
-nsim <- 20 
+nsim <- 400 
 ages <- c(20)
 
 numruns <- nsim * length(sites) * length(taxa) * length(clocks) * length(ages)
@@ -110,15 +110,14 @@ for (tax in taxa) {
     }
 }
 
-
-for (clock in clocks) {
-    cr <- clock$cr
-    mod <- clock$mod
-    for (age in ages) {
-
-        for (site in sites) {
-            for (tax in taxa) {
-                for (j in 1:nsim) {
+for (j in 1:nsim) {
+    for (clock in clocks) {
+        cr <- clock$cr
+        mod <- clock$mod
+        for (age in ages) {
+    
+            for (site in sites) {
+                for (tax in taxa) {
                     print(sprintf("Running simulation %s / %s", s, numruns))
 
                     cr_line <- sprintf("prset clockratepr=normal(%s, %s);",0.1,0.1)
@@ -132,7 +131,7 @@ for (clock in clocks) {
                         fname_methyl <- sprintf("%s.%s.%.1e.%s.%s.m",tax,age,cr,site,j)
                         cr_tree_f <- sprintf("%s/%s.%s.%s.tree", tree_dir, tax, cr, age)
                         tree_dm <- read.tree(cr_tree_f)
-                        if (!file.exists(sprintf("%s/sump.%s.lstat", out_dir, fname_methyl)) | recook) { 
+                        if (!file.exists(sprintf("%s/sumt.%s.vstat", out_dir, fname_methyl)) | recook) { 
                             if (site > 50000) {
                                 intlv <- "yes"
                                 site_per_chunk <- 10000
@@ -147,7 +146,7 @@ for (clock in clocks) {
 
                             setup_mrb(aln_methyl, tax, sprintf("%d",site), model_lines, mcmc, fname=fname_methyl, 
                                     datatype="dimethyl", out_dir=out_dir, interleave=intlv)
-                            run_mrb("../mb", sprintf("%s/%s.nex", out_dir, fname_methyl), sprintf("%s/%s.log", out_dir, fname_methyl))
+                            run_mrb("./mb", sprintf("%s/%s.nex", out_dir, fname_methyl), sprintf("%s/%s.log", out_dir, fname_methyl))
                         }  
                     }
 

@@ -61,7 +61,7 @@ a <- b <- 0.5
 sites <- c(100, 1000, 10000)
 taxa <- c(4,20)
 bl <- 0.1
-nsim <- 40 
+nsim <- 400 
 ages <- c(20, 100)
 crs <- c(0.0001, 0.0007)
 
@@ -97,11 +97,11 @@ for (tax in taxa) {
     }
 }
 
-for (cr in crs) {
-    for (age in ages) {
-        for (site in sites) {
-            for (tax in taxa) {
-                for (j in 1:nsim) {
+for (j in 1:nsim) {
+    for (cr in crs) {
+        for (age in ages) {
+            for (site in sites) {
+                for (tax in taxa) {
                     print(sprintf("Running simulation %s / %s", s, numruns))
 
                     cr_line <- "prset clockratepr=normal(0.01, 0.01);"
@@ -118,7 +118,7 @@ for (cr in crs) {
                        aln_methyl <- sim_alignment(tree_dm,a,b,site,al=0,dg=0)
                        setup_mrb(aln_methyl, tax, site, model_lines, mcmc, fname=fname_methyl, 
                                 datatype="dimethyl", out_dir=out_dir)
-                       run_mrb("../mb", sprintf("%s/%s.nex", out_dir, fname_methyl), sprintf("%s/%s.log", out_dir,fname_methyl))
+                       run_mrb("./mb", sprintf("%s/%s.nex", out_dir, fname_methyl), sprintf("%s/%s.log", out_dir,fname_methyl))
                     }  
 
                     # fit the non-clock model:

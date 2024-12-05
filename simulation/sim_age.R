@@ -59,11 +59,11 @@ crs <- c(0.0001, 0.0007)
 # snp_cr <- c(4*10^(-9))
 
 a <- b <- 0.5
-al <- 0.5
+al <- 0.0
 sites <- c(100, 1000, 10000)#, 50000)
 taxa <- c(4,20)
 bl <- 0.1
-nsim <- 40 
+nsim <- 400 
 ages <- c(20,100)
 
 numruns <- nsim * length(crs) * length(sites) * length(taxa) * length(ages)
@@ -112,11 +112,11 @@ for (tax in taxa) {
     }
 }
 
-for (cr in crs) {
-    for (age in ages) {
-        for (tax in taxa) {
-            for (site in sites) {
-                for (j in 1:nsim) {
+for (j in 1:nsim) {
+    for (cr in crs) {
+        for (age in ages) {
+            for (tax in taxa) {
+                for (site in sites) {
                     print(sprintf("Running simulation %s / %s", s, numruns))
 
                     cr_line <- sprintf("prset clockratepr=normal(%s, %s);", cr, cr*0.1)
@@ -131,18 +131,43 @@ for (cr in crs) {
                     cr_tree_f <- sprintf("%s/%s.%s.%.1e.%s.tree", tree_dir, tax, bl, cr, age)
                     tree_dm <- read.tree(cr_tree_f)
 
-                    if (!file.exists(sprintf("%s/sump.%s.lstat", out_dir, fname_methyl)) | recook) { 
+                    # check for necessary files in output directory
+                    vstat   <- file.exists(sprintf("%s/sumt.%s.vstat", out_dir, fname_methyl))
+                    tstat   <- file.exists(sprintf("%s/sumt.%s.tstat", out_dir, fname_methyl))
+                    pstat   <- file.exists(sprintf("%s/sump.%s.pstat", out_dir, fname_methyl))
+                    lstat   <- file.exists(sprintf("%s/sump.%s.lstat", out_dir, fname_methyl))
+                    trprobs <- file.exists(sprintf("%s/sumt.%s.trprobs", out_dir, fname_methyl))
+                    contre  <- file.exists(sprintf("%s/sumt.%s.con.tre", out_dir, fname_methyl))
+                    log     <- file.exists(sprintf("%s/%s.log", out_dir, fname_methyl))
+                    nex     <- file.exists(sprintf("%s/%s.nex", out_dir, fname_methyl))
+
+                    if ((!vstat | !tstat | !pstat | !lstat | !trprobs | !contre | !log | !nex) | 
+                        recook) { 
+                       print(sprintf("recooking %s", fname_methyl))
                        aln_methyl <- sim_alignment(tree_dm,a,b,site,al=0,dg=0)
 
                        setup_mrb(aln_methyl, tax, site, model_lines, mcmc, fname=fname_methyl, 
                                 datatype="dimethyl", out_dir=out_dir)
-                       run_mrb("../mb", sprintf("%s/%s.nex", out_dir, fname_methyl), sprintf("%s/%s.log", out_dir, fname_methyl))
+                       run_mrb("./mb", sprintf("%s/%s.nex", out_dir, fname_methyl), sprintf("%s/%s.log", out_dir, fname_methyl))
                     }
 
                     # fit the non-clock model:
                     # if not exists, copy exising nex file, delete clock prior lines and run
                     fname_methyl_nc <- sprintf("%s.%s.%.1e.%s.%s.m.nc",tax,age,cr,site,j)
-                    if (!file.exists(sprintf("%s/sump.%s.lstat", out_dir, fname_methyl_nc)) | recook) { 
+
+                    # check for proper outputs
+                    vstat   <- file.exists(sprintf("%s/sumt.%s.vstat", out_dir, fname_methyl_nc))
+                    tstat   <- file.exists(sprintf("%s/sumt.%s.tstat", out_dir, fname_methyl_nc))
+                    pstat   <- file.exists(sprintf("%s/sump.%s.pstat", out_dir, fname_methyl_nc))
+                    lstat   <- file.exists(sprintf("%s/sump.%s.lstat", out_dir, fname_methyl_nc))
+                    trprobs <- file.exists(sprintf("%s/sumt.%s.trprobs", out_dir, fname_methyl_nc))
+                    contre  <- file.exists(sprintf("%s/sumt.%s.con.tre", out_dir, fname_methyl_nc))
+                    log     <- file.exists(sprintf("%s/%s.log", out_dir, fname_methyl_nc))
+                    nex     <- file.exists(sprintf("%s/%s.nex", out_dir, fname_methyl_nc))
+
+                    if ((!vstat | !tstat | !pstat | !lstat | !trprobs | !contre | !log | !nex) | 
+                        recook) { 
+                        print(sprintf("recooking nc %s", fname_methyl_nc))
                         nex_c <- sprintf("%s/%s.nex", out_dir,fname_methyl)
                         nex_nc <- sprintf("%s/%s.nex", out_dir,fname_methyl_nc) 
                         system(sprintf("cp %s %s", nex_c, nex_nc))
