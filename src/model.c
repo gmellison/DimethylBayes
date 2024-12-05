@@ -4974,7 +4974,6 @@ int DoPrsetParm (char *parmName, char *tkn)
                 return (ERROR);
             }
 
-
         /* set readErrPr (revMatPr) *********************************************************/
         else if (!strcmp(parmName, "Readerrpr"))
             {
@@ -18926,7 +18925,6 @@ int SetModelDefaults (void)
 
         SetCode (j);
         modelParams[j].nStates = NumStates (j);             /* number of states for partition             */
-        MrBayesPrint("Number States: %d\n", NumStates (j));             /* number of states for partition             */
 
 
         if (numDefinedConstraints > 0)
