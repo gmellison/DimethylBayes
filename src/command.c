@@ -13799,15 +13799,15 @@ int IsWhite (char c)
 
 int MethylID (char n)
 {
-    if (n == 'E' || n == 'e')
+    if (n == '0')
         {
         return 1;
         }
-    else if (n == 'M' || n == 'm')
+    else if (n == '1')
         {
         return 2;
         }
-    else if (n == 'D' || n == 'd')
+    else if (n == '2')
         {
         return 4;
         }
@@ -15430,11 +15430,11 @@ char WhichNuc (int x)
 char WhichMethyl (int x)
 {
     if (x == 1)
-            return('E');
+            return('0');
     else if (x == 2)
-            return('M');
+            return('1');
     else if (x == 4)
-            return('D');
+            return('2');
     else if (x == MISSING)
         return ('?');
     else if (x == GAP)
