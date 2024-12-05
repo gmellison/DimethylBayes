@@ -48,7 +48,7 @@
 #endif
 
 
-#define NUMCOMMANDS                     62 + 3    /* The total number of commands in the program  */
+#define NUMCOMMANDS                     62    /* The total number of commands in the program  */
 #define NUMPARAMS                       286   /* The total number of parameters  */
 #define PARAM(i, s, f, l)               p->string = s;    \
                                         p->fp = f;        \
