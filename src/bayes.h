@@ -427,8 +427,6 @@ typedef float CLFlt;        /* single-precision float used for cond likes (CLFlt
 #define ALLOC_BEST               88
 #define ALLOC_SPECIESPARTITIONS  89
 #define ALLOC_SS                 90
-#define ALLOC_PAIRWISE           91
-#define ALLOC_TRIPLES            92
 #define LINKED                  0
 #define UNLINKED                1
 
@@ -1210,7 +1208,6 @@ typedef struct model
     char        inferSiteRates[5];     /* should site rates be inferred (Yes/No)?       */
     char        inferPosSel[5];        /* should site selection be inferred (Yes/No)?   */
 
-    int         usePairwise;
     } Model, ModelParams;
 
 typedef struct chain
@@ -1487,32 +1484,6 @@ typedef struct modelinfo
     BeagleOperationByPartition* operationsByPartition; /* array of division operations to be sent to Beagle     */
 #endif /* BEAGLE_V3_ENABLED */
 #endif /* BEAGLE_ENABLED */
-
-    /*  Pairwise model information */
-    int         usePairwise;                  /*  Flag for whether pairwise likelihood is used in mcmc */
-    MrBFlt      **pwDists;
-    int         **pwIndex;               
-    int         tiProbsPwLength;              /*   */
-    CLFlt       **tiProbsPw;
-    /*  int     *tiProbsPwScratchIndex;  */     /* index to scratch space for branch ti probs   */
-    int         numTiProbsPw;                 /* number of ti prob arrays                     */
-    CLFlt       **doubletProbs;              
-    int         doubletProbsLength;
-    int         numDoubletProbs;
-
-    /*  Triplet model information */
-    MrBFlt      **tripleCnDists;    /*  [chainId][tripleIndex * 3]   */
-    CLFlt       **tripleTiProbs;    /*  transition probabilities : [chainId*triplId][1:64*numRateCats] */ 
-    CLFlt       **tripleProbs;      /*  site pattern probs: [chainId*triptId][64] */ 
-    int         **tripIndex;     /*  holds indices for triplets: [chainId][tripId]  */
-    int         **tripDistIndex;     /*  holds indices for triplets: [chainId][tripId]  */
-    int         numTripleProbs;
-    int         numTiProbsTrip;
-    int         tiProbsTripLength;
-    int         tripleProbsLength;
-    int         condLikeLengthPw;             /* length of cond like array (incl. ti cats)    */
-
-    MrBFlt      lnLikeAlpha[MAX_CHAINS];      /* log like for chain                           */
 
     } ModelInfo;
 
