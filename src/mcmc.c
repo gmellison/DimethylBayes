@@ -5971,10 +5971,8 @@ int InitChainCondLikes (void)
         if (!m->readErrClScratchIndex)
             return (ERROR);
         for (i=0; i<numLocalTaxa; i++)
-            m->readErrClScratchIndex[i] = -1;
-        for (i=0; i<nIntNodes; i++)
             {
-            m->readErrClScratchIndex[i+numLocalTaxa] = reI;
+            m->readErrClScratchIndex[i] = reI;
             reI += indexStep;
             }
 
@@ -15897,6 +15895,7 @@ void ResetFlips (int chain)
 #endif
                 }
             }
+
         
         /* division flag and tree node flags are reset when trees are copied */
         }
