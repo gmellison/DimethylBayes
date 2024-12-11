@@ -6082,6 +6082,19 @@ void FlipCondLikeSpace (ModelInfo* m, int chain, int nodeIndex)
     temp                               = m->condLikeIndex[chain][nodeIndex];
     m->condLikeIndex[chain][nodeIndex] = m->condLikeScratchIndex[nodeIndex];
     m->condLikeScratchIndex[nodeIndex] = temp;
+
+    if (*GetParamVals (m->readErrRate, chain, state[chain]) > 0.0)
+        FlipReadErrClSpace(m,chain,nodeIndex);
+}
+
+/* FlipCondLikeSpace: Flip space for conditional likelihoods with scratch area */
+void FlipReadErrClSpace (ModelInfo* m, int chain, int nodeIndex)
+{
+    int         temp;
+
+    temp                                = m->readErrClIndex[chain][nodeIndex];
+    m->readErrClIndex[chain][nodeIndex] = m->readErrClScratchIndex[nodeIndex];
+    m->readErrClScratchIndex[nodeIndex] = temp;
 }
 
 
@@ -6132,6 +6145,7 @@ void FlipTiProbsSpace (ModelInfo* m, int chain, int nodeIndex)
     temp                              = m->tiProbsIndex[chain][nodeIndex];
     m->tiProbsIndex[chain][nodeIndex] = m->tiProbsScratchIndex[nodeIndex];
     m->tiProbsScratchIndex[nodeIndex] = temp;
+
 }
 
 
@@ -6714,13 +6728,6 @@ int Likelihood_Dimethyl (TreeNode *p, int division, int chain, MrBFlt *lnL, int 
     clPtr = m->condLikes[m->condLikeIndex[chain][p->index]];
     clP = m->clP;
   
-    /* 
-    MrBayesPrint("Top-node cond likes for likelihood: \n"j);
-    for (int i=0; i<m->condLikeLength; i++)
-        if(clPtr[i] > 1.0)
-            MrBayesPrint("here we are... \n");
-    */
-
     for (k=0; k<m->numRateCats; k++)
         {
         clP[k] = clPtr;

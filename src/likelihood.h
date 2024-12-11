@@ -56,6 +56,8 @@ void      FlipCondLikeSpace (ModelInfo *m, int chain, int nodeIndex);
 void      FlipNodeScalerSpace (ModelInfo *m, int chain, int nodeIndex);
 void      FlipSiteScalerSpace (ModelInfo *m, int chain);
 void      FlipTiProbsSpace (ModelInfo *m, int chain, int nodeIndex);
+void      FlipReadErrClSpace (ModelInfo *m, int chain, int nodeIndex);
+
 
 int       CondLikeDown_Bin (TreeNode *p, int division, int chain);
 #if defined (SSE_ENABLED)

@@ -5965,6 +5965,19 @@ int InitChainCondLikes (void)
                 }
             }
 
+        /* allocate and set up scratch readErr CLs */
+        m->readErrClScratchIndex = (int *) SafeMalloc (numLocalTaxa * sizeof(int));
+        reI=0;
+        if (!m->readErrClScratchIndex)
+            return (ERROR);
+        for (i=0; i<numLocalTaxa; i++)
+            m->readErrClScratchIndex[i] = -1;
+        for (i=0; i<nIntNodes; i++)
+            {
+            m->readErrClScratchIndex[i+numLocalTaxa] = reI;
+            reI += indexStep;
+            }
+
         /* reserve private space for parsimony-based moves if parsimony model is used */
         if (m->parsModelId == YES && m->parsimonyBasedMove == YES)
             clIndex += nIntNodes;
