@@ -39,6 +39,9 @@
 #define TG                          14
 #define TT                          15
 
+# define E 0
+# define M 1
+# define D 2 
 #define EE  0
 #define EM  1
 #define ED  2
@@ -48,6 +51,8 @@
 #define DE  6
 #define DM  7
 #define DD  8
+
+
 
 void      CopySiteScalers (ModelInfo *m, int chain);
 void      ResetSiteScalers (ModelInfo *m, int chain);
