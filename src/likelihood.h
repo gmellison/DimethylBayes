@@ -177,11 +177,48 @@ int       SetNucQMatrix (MrBFlt **a, int n, int whichChain, int division, MrBFlt
 
 int       UpDateCijk (int whichPart, int whichChain);
 
-int       CondLikeRoot_Dimethyl (TreeNode *p, int division, int chain);
-int       CondLikeDown_Dimethyl (TreeNode *p, int division, int chain);
 int       TiProbs_Dimethyl (TreeNode *p, int division, int chain);
-int       CondLikeScaler_Dimethyl (TreeNode *p, int division, int chain);
+
 int       Likelihood_Dimethyl (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
+#if defined (FMA_ENABLED)
+int       Likelihood_Dimethyl_FMA (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
+#endif
+#if defined (AVX_ENABLED)
+int       Likelihood_Dimethyl_AVX (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
+#endif
+#if defined (SSE_ENABLED)
+int       Likelihood_Dimethyl_SSE (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);
+#endif
+
+int       CondLikeScaler_Dimethyl (TreeNode *p, int division, int chain);
+#if defined (AVX_ENABLED)
+int       CondLikeScaler_Dimethyl_AVX (TreeNode *p, int division, int chain);
+#endif
+#if defined (SSE_ENABLED)
+int       CondLikeScaler_Dimethyl_SSE (TreeNode *p, int division, int chain);
+#endif
+
+int       CondLikeRoot_Dimethyl (TreeNode *p, int division, int chain);
+#if defined (FMA_ENABLED)
+int       CondLikeRoot_Dimethyl_FMA (TreeNode *p, int division, int chain);
+#endif
+#if defined (AVX_ENABLED)
+int       CondLikeRoot_Dimethyl_AVX (TreeNode *p, int division, int chain);
+#endif
+#if defined (SSE_ENABLED)
+int       CondLikeRoot_Dimethyl_SSE (TreeNode *p, int division, int chain);
+#endif
+
+int       CondLikeDown_Dimethyl (TreeNode *p, int division, int chain);
+#if defined (FMA_ENABLED)
+int       CondLikeDown_Dimethyl_FMA (TreeNode *p, int division, int chain);
+#endif
+#if defined (AVX_ENABLED)
+int       CondLikeDown_Dimethyl_AVX (TreeNode *p, int division, int chain);
+#endif
+#if defined (SSE_ENABLED)
+int       CondLikeDown_Dimethyl_SSE (TreeNode *p, int division, int chain);
+#endif
 
 
 

@@ -18417,15 +18417,37 @@ int SetLikeFunctions (void)
                 }
             else
                 {
+#    if defined (SSE_ENABLED)  
+                m->useVec = VEC_SSE;
+                m->numFloatsPerVec = 3;
+                m->CondLikeDown = &CondLikeDown_Dimethyl_SSE;
+                m->CondLikeRoot = &CondLikeRoot_Dimethyl_SSE;
+                m->CondLikeScaler = &CondLikeScaler_Dimethyl_SSE;
+#if defined (AVX_ENABLED)   // override SSE settings
+                m->useVec = VEC_AVX;
+                m->numFloatsPerVec = 6;
+                m->CondLikeDown = &CondLikeDown_Dimethyl_AVX;
+                m->CondLikeRoot = &CondLikeRoot_Dimethyl_AVX;
+                m->CondLikeScaler = &CondLikeScaler_Dimethyl_AVX;
+#if defined (FMA_ENABLED)   // override AVX settings (CondLikeScaler cannot be improved over AVX)
+                m->useVec = VEC_FMA;
+                m->CondLikeDown = &CondLikeDown_Dimethyl_FMA;
+                m->CondLikeRoot = &CondLikeRoot_Dimethyl_FMA;
+#endif
+#endif
+
+#    endif
                 m->CondLikeDown   = &CondLikeDown_Dimethyl;
                 m->CondLikeRoot   = &CondLikeRoot_Dimethyl;
                 m->TiProbs        = &TiProbs_Dimethyl;
                 m->CondLikeScaler = &CondLikeScaler_Dimethyl;
                 m->Likelihood     = &Likelihood_Dimethyl;
                 m->StateCode      = &StateCode_DIMETHYL;
-                //m->CondLikeUp     = &CondLikeUp_Dimethyl;
+                //m->CondLikeUp     = &CondLikeUp_Dimethyl; /*  printing ancestal states not implemented */
                 //m->PrintAncStates = &PrintAncStates_Gen;
                 m->PrintSiteRates = &PrintSiteRates_Gen;
+
+
                 }
             }
         else if (m->dataType == STANDARD)
