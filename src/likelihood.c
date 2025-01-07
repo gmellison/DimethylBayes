@@ -3479,72 +3479,72 @@ int CondLikeRoot_Dimethyl_FMA (TreeNode *p, int division, int chain)
         {
             m1 = _mm256_broadcast_ss (&tiPL[EE]);
             m2 = _mm256_broadcast_ss (&tiPR[EE]);
-            m3 = _mm256_broadcast_ss (&tiPE[EE]);
+            m3 = _mm256_broadcast_ss (&tiPA[EE]);
             m4 = _mm256_mul_ps (m1, clL[0]);
             m5 = _mm256_mul_ps (m2, clR[0]);
-            m6 = _mm256_mul_ps (m3, clE[0]);
+            m6 = _mm256_mul_ps (m3, clA[0]);
             
             m1 = _mm256_broadcast_ss (&tiPL[EM]);
             m2 = _mm256_broadcast_ss (&tiPR[EM]);
-            m3 = _mm256_broadcast_ss (&tiPE[EM]);
+            m3 = _mm256_broadcast_ss (&tiPA[EM]);
             m4 = _mm256_fmadd_ps (m1, clL[1], m4);
             m5 = _mm256_fmadd_ps (m2, clR[1], m5);
-            m6 = _mm256_fmadd_ps (m3, clE[1], m6);
+            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
             
             m1 = _mm256_broadcast_ss (&tiPL[ED]);
             m2 = _mm256_broadcast_ss (&tiPR[ED]);
-            m3 = _mm256_broadcast_ss (&tiPE[ED]);
+            m3 = _mm256_broadcast_ss (&tiPA[ED]);
             m4 = _mm256_fmadd_ps (m1, clL[2], m4);
             m5 = _mm256_fmadd_ps (m2, clR[2], m5);
-            m6 = _mm256_fmadd_ps (m3, clE[2], m6);
+            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
             
             m4 = _mm256_mul_ps (m4, m5);
             *clP++ = _mm256_mul_ps (m4, m6);
            
             m1 = _mm256_broadcast_ss (&tiPL[ME]);
             m2 = _mm256_broadcast_ss (&tiPR[ME]);
-            m3 = _mm256_broadcast_ss (&tiPE[ME]);
+            m3 = _mm256_broadcast_ss (&tiPA[ME]);
             m4 = _mm256_mul_ps (m1, clL[0]);
             m5 = _mm256_mul_ps (m2, clR[0]);
-            m6 = _mm256_mul_ps (m3, clE[0]);
+            m6 = _mm256_mul_ps (m3, clA[0]);
             
             m1 = _mm256_broadcast_ss (&tiPL[MM]);
             m2 = _mm256_broadcast_ss (&tiPR[MM]);
-            m3 = _mm256_broadcast_ss (&tiPE[MM]);
+            m3 = _mm256_broadcast_ss (&tiPA[MM]);
             m4 = _mm256_fmadd_ps (m1, clL[1], m4);
             m5 = _mm256_fmadd_ps (m2, clR[1], m5);
-            m6 = _mm256_fmadd_ps (m3, clE[1], m6);
+            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
             
             m1 = _mm256_broadcast_ss (&tiPL[MD]);
             m2 = _mm256_broadcast_ss (&tiPR[MD]);
-            m3 = _mm256_broadcast_ss (&tiPE[MD]);
+            m3 = _mm256_broadcast_ss (&tiPA[MD]);
             m4 = _mm256_fmadd_ps (m1, clL[2], m4);
             m5 = _mm256_fmadd_ps (m2, clR[2], m5);
-            m6 = _mm256_fmadd_ps (m3, clE[2], m6);
+            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
 
             m4 = _mm256_mul_ps (m4, m5);
             *clP++ = _mm256_mul_ps (m4, m6);
             
             m1 = _mm256_broadcast_ss (&tiPL[DE]);
             m2 = _mm256_broadcast_ss (&tiPR[DE]);
-            m3 = _mm256_broadcast_ss (&tiPE[DE]);
+            m3 = _mm256_broadcast_ss (&tiPA[DE]);
             m4 = _mm256_mul_ps (m1, clL[0]);
             m5 = _mm256_mul_ps (m2, clR[0]);
-            m6 = _mm256_mul_ps (m3, clE[0]);
+            m6 = _mm256_mul_ps (m3, clA[0]);
             
             m1 = _mm256_broadcast_ss (&tiPL[DM]);
             m2 = _mm256_broadcast_ss (&tiPR[DM]);
-            m3 = _mm256_broadcast_ss (&tiPE[DM]);
+            m3 = _mm256_broadcast_ss (&tiPA[DM]);
             m4 = _mm256_fmadd_ps (m1, clL[1], m4);
             m5 = _mm256_fmadd_ps (m2, clR[1], m5);
-            m6 = _mm256_fmadd_ps (m3, clE[1], m6);
+            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
             
             m1 = _mm256_broadcast_ss (&tiPL[DD]);
             m2 = _mm256_broadcast_ss (&tiPR[DD]);
-            m3 = _mm256_broadcast_ss (&tiPE[DD]);
+            m3 = _mm256_broadcast_ss (&tiPA[DD]);
             m4 = _mm256_fmadd_ps (m1, clL[2], m4);
             m5 = _mm256_fmadd_ps (m2, clR[2], m5);
-            m6 = _mm256_fmadd_ps (m3, clE[2], m6);
+            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
             
             m4 = _mm256_mul_ps (m4, m5);
             *clP++ = _mm256_mul_ps (m4, m6);
@@ -3604,27 +3604,27 @@ int CondLikeRoot_Dimethyl_AVX (TreeNode *p, int division, int chain)
         {
             m1 = _mm256_broadcast_ss (&tiPL[EE]);
             m2 = _mm256_broadcast_ss (&tiPR[EE]);
-            m3 = _mm256_broadcast_ss (&tiPE[EE]);
+            m3 = _mm256_broadcast_ss (&tiPA[EE]);
             m7 = _mm256_mul_ps (m1, clL[0]);
             m8 = _mm256_mul_ps (m2, clR[0]);
-            m9 = _mm256_mul_ps (m3, clE[0]);
+            m9 = _mm256_mul_ps (m3, clA[0]);
             
             m1 = _mm256_broadcast_ss (&tiPL[EM]);
             m2 = _mm256_broadcast_ss (&tiPR[EM]);
-            m3 = _mm256_broadcast_ss (&tiPE[EM]);
+            m3 = _mm256_broadcast_ss (&tiPA[EM]);
             m4 = _mm256_mul_ps (m1, clL[1]);
             m5 = _mm256_mul_ps (m2, clR[1]);
-            m6 = _mm256_mul_ps (m3, clE[1]);
+            m6 = _mm256_mul_ps (m3, clA[1]);
             m7 = _mm256_add_ps (m4, m7);
             m8 = _mm256_add_ps (m5, m8);
             m9 = _mm256_add_ps (m6, m9);
             
             m1 = _mm256_broadcast_ss (&tiPL[ED]);
             m2 = _mm256_broadcast_ss (&tiPR[ED]);
-            m3 = _mm256_broadcast_ss (&tiPE[ED]);
+            m3 = _mm256_broadcast_ss (&tiPA[ED]);
             m4 = _mm256_mul_ps (m1, clL[2]);
             m5 = _mm256_mul_ps (m2, clR[2]);
-            m6 = _mm256_mul_ps (m3, clE[2]);
+            m6 = _mm256_mul_ps (m3, clA[2]);
             m7 = _mm256_add_ps (m4, m7);
             m8 = _mm256_add_ps (m5, m8);
             m9 = _mm256_add_ps (m6, m9);
@@ -3634,27 +3634,27 @@ int CondLikeRoot_Dimethyl_AVX (TreeNode *p, int division, int chain)
             
             m1 = _mm256_broadcast_ss (&tiPL[ME]);
             m2 = _mm256_broadcast_ss (&tiPR[ME]);
-            m3 = _mm256_broadcast_ss (&tiPE[ME]);
+            m3 = _mm256_broadcast_ss (&tiPA[ME]);
             m7 = _mm256_mul_ps (m1, clL[0]);
             m8 = _mm256_mul_ps (m2, clR[0]);
-            m9 = _mm256_mul_ps (m3, clE[0]);
+            m9 = _mm256_mul_ps (m3, clA[0]);
             
             m1 = _mm256_broadcast_ss (&tiPL[MM]);
             m2 = _mm256_broadcast_ss (&tiPR[MM]);
-            m3 = _mm256_broadcast_ss (&tiPE[MM]);
+            m3 = _mm256_broadcast_ss (&tiPA[MM]);
             m4 = _mm256_mul_ps (m1, clL[1]);
             m5 = _mm256_mul_ps (m2, clR[1]);
-            m6 = _mm256_mul_ps (m3, clE[1]);
+            m6 = _mm256_mul_ps (m3, clA[1]);
             m7 = _mm256_add_ps (m4, m7);
             m8 = _mm256_add_ps (m5, m8);
             m9 = _mm256_add_ps (m6, m9);
             
             m1 = _mm256_broadcast_ss (&tiPL[MD]);
             m2 = _mm256_broadcast_ss (&tiPR[MD]);
-            m3 = _mm256_broadcast_ss (&tiPE[MD]);
+            m3 = _mm256_broadcast_ss (&tiPA[MD]);
             m4 = _mm256_mul_ps (m1, clL[2]);
             m5 = _mm256_mul_ps (m2, clR[2]);
-            m6 = _mm256_mul_ps (m3, clE[2]);
+            m6 = _mm256_mul_ps (m3, clA[2]);
             m7 = _mm256_add_ps (m4, m7);
             m8 = _mm256_add_ps (m5, m8);
             m9 = _mm256_add_ps (m6, m9);
@@ -3664,27 +3664,27 @@ int CondLikeRoot_Dimethyl_AVX (TreeNode *p, int division, int chain)
             
             m1 = _mm256_broadcast_ss (&tiPL[DE]);
             m2 = _mm256_broadcast_ss (&tiPR[DE]);
-            m3 = _mm256_broadcast_ss (&tiPE[DE]);
+            m3 = _mm256_broadcast_ss (&tiPA[DE]);
             m7 = _mm256_mul_ps (m1, clL[0]);
             m8 = _mm256_mul_ps (m2, clR[0]);
-            m9 = _mm256_mul_ps (m3, clE[0]);
+            m9 = _mm256_mul_ps (m3, clA[0]);
             
             m1 = _mm256_broadcast_ss (&tiPL[DM]);
             m2 = _mm256_broadcast_ss (&tiPR[DM]);
-            m3 = _mm256_broadcast_ss (&tiPE[DM]);
+            m3 = _mm256_broadcast_ss (&tiPA[DM]);
             m4 = _mm256_mul_ps (m1, clL[1]);
             m5 = _mm256_mul_ps (m2, clR[1]);
-            m6 = _mm256_mul_ps (m3, clE[1]);
+            m6 = _mm256_mul_ps (m3, clA[1]);
             m7 = _mm256_add_ps (m4, m7);
             m8 = _mm256_add_ps (m5, m8);
             m9 = _mm256_add_ps (m6, m9);
             
             m1 = _mm256_broadcast_ss (&tiPL[DD]);
             m2 = _mm256_broadcast_ss (&tiPR[DD]);
-            m3 = _mm256_broadcast_ss (&tiPE[DD]);
+            m3 = _mm256_broadcast_ss (&tiPA[DD]);
             m4 = _mm256_mul_ps (m1, clL[2]);
             m5 = _mm256_mul_ps (m2, clR[2]);
-            m6 = _mm256_mul_ps (m3, clE[2]);
+            m6 = _mm256_mul_ps (m3, clA[2]);
             m7 = _mm256_add_ps (m4, m7);
             m8 = _mm256_add_ps (m5, m8);
             m9 = _mm256_add_ps (m6, m9);
@@ -7958,7 +7958,7 @@ int Likelihood_Dimethyl_AVX (TreeNode *p, int division, int chain, MrBFlt *lnL, 
             mLike = _mm256_add_ps (mLike, m1);
             m1    = _mm256_mul_ps (clP[k][1], mM);
             mLike = _mm256_add_ps (mLike, m1);
-            m1    = _mm256_mul_ps (clP[k][2], mG);
+            m1    = _mm256_mul_ps (clP[k][2], mD);
             mLike = _mm256_add_ps (mLike, m1);
             clP[k] += 3;
         }
