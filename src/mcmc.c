@@ -4552,11 +4552,11 @@ void FreeChainMemory (void)
             m->readErrClIndex = NULL;
             }
 
-//        if (m->readErrClScratchIndex)
-//            {
-//            free (m->readErrClScratchIndex);
-//            m->readErrClScratchIndex = NULL;
-//            }
+        if (m->readErrClScratchIndex)
+            {
+            free (m->readErrClScratchIndex);
+            m->readErrClScratchIndex = NULL;
+            }
 
         if (m->condLikeScratchIndex)
             {
