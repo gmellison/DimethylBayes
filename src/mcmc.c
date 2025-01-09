@@ -4544,13 +4544,18 @@ void FreeChainMemory (void)
             m->readErrCls = NULL;
             }
 
-
         if (m->readErrClIndex)
             {
             for (j=0; j<numLocalChains; j++)
                 free (m->readErrClIndex[j]);
             free (m->readErrClIndex);
             m->readErrClIndex = NULL;
+            }
+
+        if (m->readErrClScratchIndex)
+            {
+            free (m->readErrClScratchIndex);
+            m->readErrClScratchIndex = NULL;
             }
 
         if (m->condLikeScratchIndex)
@@ -16996,12 +17001,12 @@ int RunChain (RandLong *seed)
                     return (ERROR);
                     }
 #   endif
-                if (GetTree (theMove->parm, chn, state[chn])->root->age > 17) 
-                    {
-                    MrBayesPrint("Root age >17 at run %d \n", n);
-                    MrBayesPrint("After move %s", theMove->name);
-                    return (ERROR);
-                    }
+                //if (GetTree (theMove->parm, chn, state[chn])->root->age > 17) 
+                //    {
+                //    MrBayesPrint("Root age >17 at run %d \n", n);
+                //    MrBayesPrint("After move %s", theMove->name);
+                //    return (ERROR);
+                //    }
 
                 /* heat */
                 lnLikelihoodRatio *= Temperature (chainId[chn]);
