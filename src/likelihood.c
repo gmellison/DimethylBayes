@@ -816,10 +816,9 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         lState = m->termState[p->left->index];
         tiPL = pL;
 
-        /* 
         if (rER > 0) 
             tiPL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-        */
+
         for (k=j=0; k<m->numRateCats; k++)
             {
             for (i=0; i<3; i++)
@@ -841,6 +840,9 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         {
         shortCut |= 2;
         rState = m->termState[p->right->index];
+
+        if (rER > 0) 
+            tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
 
         tiPR = pR;
 
@@ -12228,45 +12230,45 @@ int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
     // if left/right node are tips, calc probabilities 
     // by summing over the read error probabilities  
     //
-    //if (p->index < numLocalTaxa)
-    //    {
-    //    rER=*GetParamVals (m->readErrRate, chain, state[chain]);
-    //    if (rER > 0) 
-    //        {
-    //        for (i=index=0; i<3; i++)
-    //            {
-    //            for (j=0; j<3; j++)
-    //               {
-    //               if (j==i) 
-    //                   readErrProbs[index++]=(1 - 2.0*rER);
-    //               else 
-    //                   readErrProbs[index++]=rER;
-    //               }
-    //           }
+    if (p->index < numLocalTaxa)
+        {
+        rER=*GetParamVals (m->readErrRate, chain, state[chain]);
+        if (rER > 0) 
+            {
+            for (i=index=0; i<3; i++)
+                {
+                for (j=0; j<3; j++)
+                   {
+                   if (j==i) 
+                       readErrProbs[index++]=(1 - 2.0*rER);
+                   else 
+                       readErrProbs[index++]=rER;
+                   }
+               }
 
-    //        rECL=m->readErrCls[m->readErrClIndex[chain][p->index]];
+            rECL=m->readErrCls[m->readErrClIndex[chain][p->index]];
 
-    //        /*  reset...  */
-    //        for (i=0;i<m->readErrClLength;i++)
-    //                rECL[i]=0.0;
+            /*  reset...  */
+            for (i=0;i<m->readErrClLength;i++)
+                    rECL[i]=0.0;
 
-    //        for (k=index=tipIndex=0; k<m->numRateCats; k++)
-    //            {
-    //            for (i=0; i<n; i++) 
-    //                { 
-    //                for (j=0; j<n; j++) 
-    //                    {
-    //                    /*  rECL[index] = P(j -> i) = \sum_x P(x, i) P(x->j) */
-    //                    rECL[index]+=(CLFlt)(tiP[tipIndex+j+0]*readErrProbs[i+0]);
-    //                    rECL[index]+=(CLFlt)(tiP[tipIndex+j+3]*readErrProbs[i+3]);
-    //                    rECL[index]+=(CLFlt)(tiP[tipIndex+j+6]*readErrProbs[i+6]);
-    //                    index++;
-    //                    }
-    //                }
-    //            tipIndex+=9;
-    //            }
-    //        }
-    //    }
+            for (k=index=tipIndex=0; k<m->numRateCats; k++)
+                {
+                for (i=0; i<n; i++) 
+                    { 
+                    for (j=0; j<n; j++) 
+                        {
+                        /*  rECL[index] = P(j -> i) = \sum_x P(x, i) P(x->j) */
+                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+0]*readErrProbs[i+0]);
+                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+3]*readErrProbs[i+3]);
+                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+6]*readErrProbs[i+6]);
+                        index++;
+                        }
+                    }
+                tipIndex+=9;
+                }
+            }
+        }
                                                                            
     return (NO_ERROR);
 }
