@@ -16978,6 +16978,7 @@ int RunChain (RandLong *seed)
                     // printf ("Seed: %ld\n", oldSeed);  state[chn] ^= 1;  PrintCheckPoint (n);
                     return ERROR;
                     }
+
 #       if defined (DEBUG_LNLIKELIHOOD) /* slow */
                 ResetFlips(chn); /* needed to return flags so they point to old state */
                 TouchEverything(chn);
@@ -16995,6 +16996,13 @@ int RunChain (RandLong *seed)
                     return (ERROR);
                     }
 #   endif
+                if (GetTree (theMove->parm, chn, state[chn])->root->age > 17) 
+                    {
+                    MrBayesPrint("Root age >17 at run %d \n", n);
+                    MrBayesPrint("After move %s", theMove->name);
+                    return (ERROR);
+                    }
+
                 /* heat */
                 lnLikelihoodRatio *= Temperature (chainId[chn]);
                 lnPriorRatio      *= Temperature (chainId[chn]);
