@@ -2584,6 +2584,10 @@ int DoMcmc (void)
             goto errorExit;
         }
 
+    /* Check again that the model is consistent after potentially resetting starting values (co-dependencies etc) */
+    if (CheckModel() == ERROR)
+        goto errorExit;
+ 
 #ifndef NDEBUG
     /* checking tree consistency for debug purposes */
     for (i=0; i<numParams; i++)
@@ -2851,9 +2855,6 @@ int DoMcmcParm (char *parmName, char *tkn)
                 }
                 */
             }
-
-
-
         /* set Swapseed (global variable swapSeed) ***************************************************************/
         else if (!strcmp(parmName, "Swapseed"))
             {
@@ -3922,7 +3923,6 @@ int DoMcmcParm (char *parmName, char *tkn)
                 return (ERROR);
                 }
             }
-
         /* set Append (chainParams.append) *********************************************/
         else if (!strcmp(parmName, "Append"))
             {
@@ -5805,8 +5805,11 @@ int InitChainCondLikes (void)
         m->numCondLikes = (numLocalChains + 1) * (nIntNodes);
         m->numCondLikes += numLocalTaxa;
 
-        m->numReadErrCls = (numLocalChains + 1) * (numLocalTaxa);
-        m->readErrClLength = m->numModelStates * m->numModelStates * m->numRateCats;
+        if (m->useReadErr) 
+            {
+            m->numReadErrCls = (numLocalChains + 1) * (numLocalTaxa);
+            m->readErrClLength = m->numModelStates * m->numModelStates * m->numRateCats;
+            }
 
         /*
 #   if !defined (DEBUG_NOSHORTCUTS)
@@ -5847,7 +5850,6 @@ int InitChainCondLikes (void)
                     {
                     m->tiProbLength += 4 * m->numRateCats * m->numBetaCats;
                     }
-
                 for (c=0; c<m->numChars; c++)
                     {
                     if (m->nStates[c] > 2 && (m->cType[c] == UNORD || m->cType[c] == ORD))
@@ -5929,7 +5931,6 @@ int InitChainCondLikes (void)
             if (!m->condLikeIndex[i])
                 return (ERROR);
             }
-
         for (i=0; i<numLocalChains; i++)
             for (j=0; j<nNodes; j++)
                 m->condLikeIndex[i][j] = -1;
@@ -5954,33 +5955,34 @@ int InitChainCondLikes (void)
             clIndex += 1; /* even for multiple omega cat we need only one set of conditional likelihoods  for terminals for all chains.*/
             }
 
-
-        /*  allocate similar index for read error condlikes */
-        m->readErrClIndex=SafeMalloc(numLocalChains * sizeof(int*));
-        for (i=0; i<numLocalChains; i++)
-            m->readErrClIndex[i]=SafeMalloc(numLocalTaxa * sizeof(int));
-
-        reI=0;
-        for (i=0; i<numLocalChains; i++)
+        if (m->useReadErr) 
             {
-            for (j=0;j<numLocalTaxa; j++) 
+            /*  allocate similar index for read error condlikes */
+            m->readErrClIndex=SafeMalloc(numLocalChains * sizeof(int*));
+            for (i=0; i<numLocalChains; i++)
+                m->readErrClIndex[i]=SafeMalloc(numLocalTaxa * sizeof(int));
+
+            reI=0;
+            for (i=0; i<numLocalChains; i++)
                 {
-                m->readErrClIndex[i][j]=reI;
-                reI+=indexStep;
+                for (j=0;j<numLocalTaxa; j++) 
+                    {
+                    m->readErrClIndex[i][j]=reI;
+                    reI+=indexStep;
+                    }
+                }
+
+            /* allocate and set up scratch readErr CLs */
+            m->readErrClScratchIndex = (int *) SafeMalloc (numLocalTaxa * sizeof(int));
+            reI=0;
+            if (!m->readErrClScratchIndex)
+                return (ERROR);
+            for (i=0; i<numLocalTaxa; i++)
+                {
+                m->readErrClScratchIndex[i] = reI;
+                reI += indexStep;
                 }
             }
-
-        /* allocate and set up scratch readErr CLs */
-        m->readErrClScratchIndex = (int *) SafeMalloc (numLocalTaxa * sizeof(int));
-        reI=0;
-        if (!m->readErrClScratchIndex)
-            return (ERROR);
-        for (i=0; i<numLocalTaxa; i++)
-            {
-            m->readErrClScratchIndex[i] = reI;
-            reI += indexStep;
-            }
-
         /* reserve private space for parsimony-based moves if parsimony model is used */
         if (m->parsModelId == YES && m->parsimonyBasedMove == YES)
             clIndex += nIntNodes;
@@ -5995,7 +5997,6 @@ int InitChainCondLikes (void)
                 }
             }
 
-
         /* allocate and set up scratch cond like indices */
         m->condLikeScratchIndex = (int *) SafeMalloc (nNodes * sizeof(int));
         if (!m->condLikeScratchIndex)
@@ -6007,7 +6008,6 @@ int InitChainCondLikes (void)
             m->condLikeScratchIndex[i+numLocalTaxa] = clIndex;
             clIndex += indexStep;
             }
-
 
         /* parsimony models need nothing of the below */
         if (m->parsModelId == YES || m->dataType == CONTINUOUS)
@@ -6030,7 +6030,6 @@ int InitChainCondLikes (void)
 
         if (m->useBeagle == NO)
             {
-
             /* allocate cond like space */
             m->condLikes = (CLFlt**) SafeMalloc(m->numCondLikes * sizeof(CLFlt*));
             if (!m->condLikes)
@@ -6168,15 +6167,18 @@ int InitChainCondLikes (void)
                     return (ERROR);
                 }
 
-            /*  allocate readErrCls */
-            m->readErrCls = SafeMalloc(m->numReadErrCls * sizeof(CLFlt*));
-            if (!m->readErrCls)
-                return (ERROR);
-            for (i=0;i<m->numReadErrCls;i++)
+            if (m->useReadErr) 
                 {
-                m->readErrCls[i]=SafeMalloc(m->readErrClLength * sizeof(CLFlt));  
-                if (m->readErrCls[i] == NULL)
+                /*  allocate readErrCls */
+                m->readErrCls = SafeMalloc(m->numReadErrCls * sizeof(CLFlt*));
+                if (!m->readErrCls)
                     return (ERROR);
+                for (i=0;i<m->numReadErrCls;i++)
+                    {
+                    m->readErrCls[i]=SafeMalloc(m->readErrClLength * sizeof(CLFlt));  
+                    if (m->readErrCls[i] == NULL)
+                        return (ERROR);
+                    }
                 }
 
             } /*  end of (if usebeagle==false)  */
@@ -6216,16 +6218,6 @@ int InitChainCondLikes (void)
                 tiIndex += indexStep;
                 }
             }
-
-        /* 
-        MrBayesPrint("TiProbsIndex/CondLikesIndex: \n");
-        for (i=0;i<numLocalChains;i++)
-            {
-            for (j=0; j<nNodes; j++)
-                MrBayesPrint(" %d/%d ", m->tiProbsIndex[i][j], m->condLikeIndex[i][j]);
-            MrBayesPrint("\n");
-            }
-         */
 
         /* allocate and set up scratch transition prob indices */
         m->tiProbsScratchIndex = (int *) SafeMalloc (nNodes * sizeof(int));
@@ -7732,7 +7724,7 @@ MrBFlt LogPrior (int chain)
             }
         else if (p->paramType == P_DIMETHYLRATES)
             {
-            /* revmat parameter */
+            /* dimethylrate parameter */
             if (p->paramId == DIMETHYL_RATE_DIR)
                 {
                 alphaDir = mp->dimethylRateDir;
@@ -15900,7 +15892,6 @@ void ResetFlips (int chain)
 #endif
                 }
             }
-
         
         /* division flag and tree node flags are reset when trees are copied */
         }
@@ -16443,8 +16434,7 @@ int RunChain (RandLong *seed)
             }
         TouchAllTrees (chn);
         TouchAllCijks (chn);
-
-        curLnL[chn] = LogLike(chn); 
+        curLnL[chn] = LogLike(chn);
         curLnPr[chn] = LogPrior(chn);
         for (i=0; i<numCurrentDivisions; i++)
             {
@@ -16921,8 +16911,7 @@ int RunChain (RandLong *seed)
                 return ERROR;
                 }
 #   endif
-
-            /* make move  */
+            /* make move */
             if ((theMove->moveFxn)(theMove->parm, chn, seed, &lnPriorRatio, &lnProposalRatio, theMove->tuningParam[chainId[chn]]) == ERROR)
                 {
                 printf ("%s   Error in move %s\n", spacer, theMove->name);
@@ -16943,12 +16932,14 @@ int RunChain (RandLong *seed)
 #   endif
                 abortMove = YES;
                 }
-            lnLike = LogLike(chn);                
+
+            /* abortMove is set to YES if the calculation fails because the likelihood is too small */
+            if (abortMove == NO)
+                lnLike = LogLike(chn);
 
             /* calculate acceptance probability */
             if (abortMove == NO)
                 {
-
                 lnLikelihoodRatio = lnLike - curLnL[chn];
                 lnPrior = curLnPr[chn] + lnPriorRatio;
 
@@ -16983,7 +16974,6 @@ int RunChain (RandLong *seed)
                     // printf ("Seed: %ld\n", oldSeed);  state[chn] ^= 1;  PrintCheckPoint (n);
                     return ERROR;
                     }
-
 #       if defined (DEBUG_LNLIKELIHOOD) /* slow */
                 ResetFlips(chn); /* needed to return flags so they point to old state */
                 TouchEverything(chn);
@@ -17001,12 +16991,6 @@ int RunChain (RandLong *seed)
                     return (ERROR);
                     }
 #   endif
-                //if (GetTree (theMove->parm, chn, state[chn])->root->age > 17) 
-                //    {
-                //    MrBayesPrint("Root age >17 at run %d \n", n);
-                //    MrBayesPrint("After move %s", theMove->name);
-                //    return (ERROR);
-                //    }
 
                 /* heat */
                 lnLikelihoodRatio *= Temperature (chainId[chn]);
@@ -17060,13 +17044,14 @@ int RunChain (RandLong *seed)
                 theMove->nAccepted[i] = 0;
                 theMove->nBatches[i]++;                                     /* we only autotune at most 10000 times */
                 if (chainParams.autotune == YES && theMove->moveType->Autotune != NULL && theMove->nBatches[i] < MAXTUNINGPARAM)
-                    
+                    {
                     theMove->moveType->Autotune(theMove->lastAcceptanceRate[i],
                                                 theMove->targetRate[i],
                                                 theMove->nBatches[i],
                                                 &theMove->tuningParam[i][0],
                                                 theMove->moveType->minimum[0],
                                                 theMove->moveType->maximum[0]);
+                    }
                 }
 
             /* ShowValuesForChain (chn); */
@@ -18459,8 +18444,6 @@ int SetLikeFunctions (void)
                 //m->CondLikeUp     = &CondLikeUp_Dimethyl; /*  printing ancestal states not implemented */
                 //m->PrintAncStates = &PrintAncStates_Gen;
                 m->PrintSiteRates = &PrintSiteRates_Gen;
-
-
                 }
             }
         else if (m->dataType == STANDARD)
