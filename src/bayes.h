@@ -1297,6 +1297,7 @@ typedef struct modelinfo
 
     Param       *dimethylRate;
     Param       *readErrRate;
+    int         useReadErr;
 
     Param       *mixtureRates;              /* ptr to site rate mixture used in model   */
     Param       *shape;                     /* ptr to shape used in model               */

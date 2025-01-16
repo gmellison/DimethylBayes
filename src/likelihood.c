@@ -72,6 +72,7 @@ int       SetStdQMatrix (MrBFlt **a, int nStates, MrBFlt *bs, int cType);
 int       SetProteinQMatrix (MrBFlt **a, int n, int whichChain, int division, MrBFlt rateMult);
 int       SetDimethylQMatrix (MrBFlt **a, int n, int whichChain, int division);
 
+
 /*----------------------------------------------------------------
 |
 |   CondLikeDown_Bin: binary model with or without rate variation
@@ -777,500 +778,6 @@ int CondLikeDown_Gen_GibbsGamma (TreeNode *p, int division, int chain)
 
     return NO_ERROR;
 }
-
-/*----------------------------------------------------------------
-|
-|   CondLikeDown_Dimethyl: 3by3 dimethyl model with or without rate
-|       variation
-|
------------------------------------------------------------------*/
-int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
-{
-    int             c, h, i, j, k, shortCut, *lState=NULL, *rState=NULL;
-    CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
-    ModelInfo       *m;
-
-    double          rER;
-    m = &modelSettings[division];
-
-    /* flip space so that we do not overwrite old cond likes */
-    FlipCondLikeSpace (m, chain, p->index);
-    
-    /* find conditional likelihood pointers */
-    clL = m->condLikes[m->condLikeIndex[chain][p->left->index ]];
-    clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
-    clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
-     
-    /* find transition probabilities */
-    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
-    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-
-    rER=*GetParamVals (m->readErrRate, chain, state[chain]);
-
-    /* find likelihoods of site patterns for left branch if terminal */
-    shortCut = 0;
-#   if !defined (DEBUG_NOSHORTCUTS)
-    if (p->left->left == NULL && m->isPartAmbig[p->left->index] == NO)
-        {
-        shortCut |= 1;
-        lState = m->termState[p->left->index];
-        tiPL = pL;
-
-        if (rER > 0) 
-            tiPL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-
-        for (k=j=0; k<m->numRateCats; k++)
-            {
-            for (i=0; i<3; i++)
-                {
-                preLikeL[j++] = tiPL[0];
-                preLikeL[j++] = tiPL[3];
-                preLikeL[j++] = tiPL[6];
-                tiPL++;
-                }
-            /* for ambiguous */
-            for (i=0; i<3; i++)
-                preLikeL[j++] = 1.0;
-            tiPL += 6;
-            }
-        }
-
-    /* find likelihoods of site patterns for right branch if terminal */
-    if (p->right->left == NULL && m->isPartAmbig[p->right->index] == NO)
-        {
-        shortCut |= 2;
-        rState = m->termState[p->right->index];
-
-        tiPR = pR;
-
-        if (rER > 0) 
-            tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
-
-        for (k=j=0; k<m->numRateCats; k++)
-            {
-            for (i=0; i<3; i++)
-                {
-                preLikeR[j++] = tiPR[0];
-                preLikeR[j++] = tiPR[3];
-                preLikeR[j++] = tiPR[6];
-                tiPR++;
-                }
-            /* for ambiguous */
-            for (i=0; i<3; i++)
-                preLikeR[j++] = 1.0;
-            tiPR += 6;
-            }
-        }
-#   endif
-
-    switch (shortCut)
-        {
-        case 0:
-            tiPL = pL;
-            tiPR = pR;
-            for (k=h=0; k<m->numRateCats; k++)
-                {
-                for (c=0; c<m->numChars; c++)
-                    {
-                    clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
-                                *(tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2]);
-                    clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
-                                *(tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2]);
-                    clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
-                                *(tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2]);
-                    clL += 3;
-                    clR += 3;
-                    }
-                tiPL += 9;
-                tiPR += 9;
-                }
-            break;
-        case 1:
-            tiPR = pR;
-            for (k=h=0; k<m->numRateCats; k++)
-                {
-                for (c=0; c<m->numChars; c++)
-                    {
-                    i = lState[c] + k*12;
-                    clP[h++] =   preLikeL[i++]
-                                *(tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2]);
-                    clP[h++] =   preLikeL[i++]
-                                *(tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2]);
-                    clP[h++] =   preLikeL[i++]
-                                *(tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2]);
-                    clR += 3;
-                    }
-                tiPR += 9;
-                }
-            break;
-        case 2:
-            tiPL = pL;
-            for (k=h=0; k<m->numRateCats; k++)
-                {
-                for (c=0; c<m->numChars; c++)
-                    {
-                    i = rState[c] + k*12;
-
-                    clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
-                                *preLikeR[i++];
-
-                    clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
-                                *preLikeR[i++];
-
-                    clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
-                                *preLikeR[i++];
-                    clL += 3;
-                    }
-                tiPL += 9;
-                }
-            break;
-        case 3:
-            for (k=h=0; k<m->numRateCats; k++)
-                {
-                for (c=0; c<m->numChars; c++)
-                    {
-                    i = j = k*12;
-                    i += lState[c];
-                    j += rState[c];
-                    clP[h++] =   preLikeL[i++]*preLikeR[j++];
-                    clP[h++] =   preLikeL[i++]*preLikeR[j++];
-                    clP[h++] =   preLikeL[i++]*preLikeR[j++];
-                    }
-                }
-        }
-
-
-    /*
-    for (int i=0; i<m->condLikeLength; i++)
-        {
-        if (clP[i] > 1.0 || clP[i] < 0.0)
-            MrBayesPrint("well here we are \n");
-        }
-    */
-
-    return NO_ERROR;
-}
-
-#if defined (FMA_ENABLED)
-/*----------------------------------------------------------------
- |
- |   CondLikeDown_Dimethyl_FMA: Dimethyl nucleotide model with or without rate
- |       variation, using AVX + FMA instructions
- |
- -----------------------------------------------------------------*/
-int CondLikeDown_Dimethyl_FMA (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           *pL, *pR, *tiPL, *tiPR;
-    __m256          *clL, *clR, *clP;
-    __m256          m1, m2, m3, m4;
-    ModelInfo       *m;
-    
-    m = &modelSettings[division];
-    
-    /* flip state of node so that we are not overwriting old cond likes */
-    FlipCondLikeSpace (m, chain, p->index);
-    
-    /* find conditional likelihood pointers */
-    clL = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
-    clR = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
-    clP = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
-    
-    /* find transition probabilities */
-    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
-    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-    
-    tiPL = pL;
-    tiPR = pR;
-    for (k=0; k<m->numRateCats; k++)
-    {
-        for (c=0; c<m->numVecChars; c++)
-        {
-            m1 = _mm256_broadcast_ss (&tiPL[EE]);
-            m2 = _mm256_broadcast_ss (&tiPR[EE]);
-            m3 = _mm256_mul_ps (m1, clL[0]);
-            m4 = _mm256_mul_ps (m2, clR[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[EM]);
-            m2 = _mm256_broadcast_ss (&tiPR[EM]);
-            m3 = _mm256_fmadd_ps (m1, clL[1], m3);
-            m4 = _mm256_fmadd_ps (m2, clR[1], m4);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[ED]);
-            m2 = _mm256_broadcast_ss (&tiPR[ED]);
-            m3 = _mm256_fmadd_ps (m1, clL[2], m3);
-            m4 = _mm256_fmadd_ps (m2, clR[2], m4);
-            
-            *clP++ = _mm256_mul_ps (m3, m4);
-
-            m1 = _mm256_broadcast_ss (&tiPL[ME]);
-            m2 = _mm256_broadcast_ss (&tiPR[ME]);
-            m3 = _mm256_mul_ps (m1, clL[0]);
-            m4 = _mm256_mul_ps (m2, clR[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[MM]);
-            m2 = _mm256_broadcast_ss (&tiPR[MM]);
-            m3 = _mm256_fmadd_ps (m1, clL[1], m3);
-            m4 = _mm256_fmadd_ps (m2, clR[1], m4);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[MD]);
-            m2 = _mm256_broadcast_ss (&tiPR[MD]);
-            m3 = _mm256_fmadd_ps (m1, clL[2], m3);
-            m4 = _mm256_fmadd_ps (m2, clR[2], m4);
-            
-            *clP++ = _mm256_mul_ps (m3, m4);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DE]);
-            m2 = _mm256_broadcast_ss (&tiPR[DE]);
-            m3 = _mm256_mul_ps (m1, clL[0]);
-            m4 = _mm256_mul_ps (m2, clR[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DM]);
-            m2 = _mm256_broadcast_ss (&tiPR[DM]);
-            m3 = _mm256_fmadd_ps (m1, clL[1], m3);
-            m4 = _mm256_fmadd_ps (m2, clR[1], m4);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DD]);
-            m2 = _mm256_broadcast_ss (&tiPR[DD]);
-            m3 = _mm256_fmadd_ps (m1, clL[2], m3);
-            m4 = _mm256_fmadd_ps (m2, clR[2], m4);
-            
-            *clP++ = _mm256_mul_ps (m3, m4);
-
-            clL += 3;
-            clR += 3;
-        }
-        tiPL += 9;
-        tiPR += 9;
-    }
-    
-    return NO_ERROR;
-    
-}
-#endif
-
-
-#if defined (AVX_ENABLED)
-/*----------------------------------------------------------------
- |
- |   CondLikeDown_Dimethyl_AVX: Dimethyl nucleotide model with or without rate
- |       variation, using AVX instructions
- |
- -----------------------------------------------------------------*/
-int CondLikeDown_Dimethyl_AVX (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           *pL, *pR, *tiPL, *tiPR;
-    __m256          *clL, *clR, *clP;
-    __m256          m1, m2, m3, m4, m5, m6;
-    ModelInfo       *m;
-    
-    m = &modelSettings[division];
-    
-    /* flip state of node so that we are not overwriting old cond likes */
-    FlipCondLikeSpace (m, chain, p->index);
-    
-    /* find conditional likelihood pointers */
-    clL = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
-    clR = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
-    clP = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
-    
-    /* find transition probabilities */
-    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
-    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-    
-    tiPL = pL;
-    tiPR = pR;
-    for (k=0; k<m->numRateCats; k++)
-    {
-        for (c=0; c<m->numVecChars; c++)
-        {
-            m1 = _mm256_broadcast_ss (&tiPL[EE]);
-            m2 = _mm256_broadcast_ss (&tiPR[EE]);
-            m5 = _mm256_mul_ps (m1, clL[0]);
-            m6 = _mm256_mul_ps (m2, clR[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[EM]);
-            m2 = _mm256_broadcast_ss (&tiPR[EM]);
-            m3 = _mm256_mul_ps (m1, clL[1]);
-            m4 = _mm256_mul_ps (m2, clR[1]);
-            m5 = _mm256_add_ps (m3, m5);
-            m6 = _mm256_add_ps (m4, m6);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[ED]);
-            m2 = _mm256_broadcast_ss (&tiPR[ED]);
-            m3 = _mm256_mul_ps (m1, clL[2]);
-            m4 = _mm256_mul_ps (m2, clR[2]);
-            m5 = _mm256_add_ps (m3, m5);
-            m6 = _mm256_add_ps (m4, m6);
-            
-            *clP++ = _mm256_mul_ps (m5, m6);
-
-            m1 = _mm256_broadcast_ss (&tiPL[ME]);
-            m2 = _mm256_broadcast_ss (&tiPR[ME]);
-            m5 = _mm256_mul_ps (m1, clL[0]);
-            m6 = _mm256_mul_ps (m2, clR[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[MM]);
-            m2 = _mm256_broadcast_ss (&tiPR[MM]);
-            m3 = _mm256_mul_ps (m1, clL[1]);
-            m4 = _mm256_mul_ps (m2, clR[1]);
-            m5 = _mm256_add_ps (m3, m5);
-            m6 = _mm256_add_ps (m4, m6);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[MD]);
-            m2 = _mm256_broadcast_ss (&tiPR[MD]);
-            m3 = _mm256_mul_ps (m1, clL[2]);
-            m4 = _mm256_mul_ps (m2, clR[2]);
-            m5 = _mm256_add_ps (m3, m5);
-            m6 = _mm256_add_ps (m4, m6);
-            
-            *clP++ = _mm256_mul_ps (m5, m6);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DE]);
-            m2 = _mm256_broadcast_ss (&tiPR[DE]);
-            m5 = _mm256_mul_ps (m1, clL[0]);
-            m6 = _mm256_mul_ps (m2, clR[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DM]);
-            m2 = _mm256_broadcast_ss (&tiPR[DM]);
-            m3 = _mm256_mul_ps (m1, clL[1]);
-            m4 = _mm256_mul_ps (m2, clR[1]);
-            m5 = _mm256_add_ps (m3, m5);
-            m6 = _mm256_add_ps (m4, m6);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DD]);
-            m2 = _mm256_broadcast_ss (&tiPR[DD]);
-            m3 = _mm256_mul_ps (m1, clL[2]);
-            m4 = _mm256_mul_ps (m2, clR[2]);
-            m5 = _mm256_add_ps (m3, m5);
-            m6 = _mm256_add_ps (m4, m6);
-           
-            *clP++ = _mm256_mul_ps (m5, m6);
-
-            clL += 3;
-            clR += 3;
-        }
-        tiPL += 9;
-        tiPR += 9;
-    }
-    
-    return NO_ERROR;
-    
-}
-#endif
-
-
-#if defined (SSE_ENABLED)
-/*----------------------------------------------------------------
-|
-|   CondLikeDown_Dimethyl_SSE: Dimethyl nucleotide model with or without rate
-|       variation, using SSE instructions
-|
------------------------------------------------------------------*/
-int CondLikeDown_Dimethyl_SSE (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           *pL, *pR, *tiPL, *tiPR;
-    __m128          *clL, *clR, *clP;
-    __m128          m1, m2, m3, m4, m5, m6;
-    ModelInfo       *m;
-    
-    m = &modelSettings[division];
-
-    /* flip state of node so that we are not overwriting old cond likes */
-    FlipCondLikeSpace (m, chain, p->index);
-    
-    /* find conditional likelihood pointers */
-    clL = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
-    clR = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
-    clP = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
-    
-    /* find transition probabilities */
-    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
-    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-
-    tiPL = pL;
-    tiPR = pR;
-    for (k=0; k<m->numRateCats; k++)
-        {
-        for (c=0; c<m->numVecChars; c++)
-            {
-            m1 = _mm_load1_ps (&tiPL[EE]);
-            m2 = _mm_load1_ps (&tiPR[EE]);
-            m5 = _mm_mul_ps (m1, clL[0]);
-            m6 = _mm_mul_ps (m2, clR[0]);
-
-            m1 = _mm_load1_ps (&tiPL[EM]);
-            m2 = _mm_load1_ps (&tiPR[EM]);
-            m3 = _mm_mul_ps (m1, clL[1]);
-            m4 = _mm_mul_ps (m2, clR[1]);
-            m5 = _mm_add_ps (m3, m5);
-            m6 = _mm_add_ps (m4, m6);
-
-            m1 = _mm_load1_ps (&tiPL[ED]);
-            m2 = _mm_load1_ps (&tiPR[ED]);
-            m3 = _mm_mul_ps (m1, clL[2]);
-            m4 = _mm_mul_ps (m2, clR[2]);
-            m5 = _mm_add_ps (m3, m5);
-            m6 = _mm_add_ps (m4, m6);
-
-            *clP++ = _mm_mul_ps (m5, m6);
-
-            m1 = _mm_load1_ps (&tiPL[ME]);
-            m2 = _mm_load1_ps (&tiPR[ME]);
-            m5 = _mm_mul_ps (m1, clL[0]);
-            m6 = _mm_mul_ps (m2, clR[0]);
-
-            m1 = _mm_load1_ps (&tiPL[MM]);
-            m2 = _mm_load1_ps (&tiPR[MM]);
-            m3 = _mm_mul_ps (m1, clL[1]);
-            m4 = _mm_mul_ps (m2, clR[1]);
-            m5 = _mm_add_ps (m3, m5);
-            m6 = _mm_add_ps (m4, m6);
-
-            m1 = _mm_load1_ps (&tiPL[MD]);
-            m2 = _mm_load1_ps (&tiPR[MD]);
-            m3 = _mm_mul_ps (m1, clL[2]);
-            m4 = _mm_mul_ps (m2, clR[2]);
-            m5 = _mm_add_ps (m3, m5);
-            m6 = _mm_add_ps (m4, m6);
-
-            *clP++ = _mm_mul_ps (m5, m6);
-
-            m1 = _mm_load1_ps (&tiPL[DE]);
-            m2 = _mm_load1_ps (&tiPR[DE]);
-            m5 = _mm_mul_ps (m1, clL[0]);
-            m6 = _mm_mul_ps (m2, clR[0]);
-
-            m1 = _mm_load1_ps (&tiPL[DM]);
-            m2 = _mm_load1_ps (&tiPR[DM]);
-            m3 = _mm_mul_ps (m1, clL[1]);
-            m4 = _mm_mul_ps (m2, clR[1]);
-            m5 = _mm_add_ps (m3, m5);
-            m6 = _mm_add_ps (m4, m6);
-
-            m1 = _mm_load1_ps (&tiPL[DD]);
-            m2 = _mm_load1_ps (&tiPR[DD]);
-            m3 = _mm_mul_ps (m1, clL[2]);
-            m4 = _mm_mul_ps (m2, clR[2]);
-            m5 = _mm_add_ps (m3, m5);
-            m6 = _mm_add_ps (m4, m6);
-
-            *clP++ = _mm_mul_ps (m5, m6);
-
-            clL += 3;
-            clR += 3;
-            }
-        tiPL += 9;
-        tiPR += 9;
-        }
-
-    return NO_ERROR;
-    
-}
-#endif
-
 
 
 /*----------------------------------------------------------------
@@ -3438,634 +2945,6 @@ int CondLikeRoot_Gen_GibbsGamma (TreeNode *p, int division, int chain)
 
     return NO_ERROR;
 }
-
-#if defined (FMA_ENABLED)
-/*----------------------------------------------------------------
- |
- |   CondLikeRoot_Dimethyl_FMA: 4by4 nucleotide model with or without rate
- |       variation using AVX + FMA instructions
- |
- -----------------------------------------------------------------*/
-int CondLikeRoot_Dimethyl_FMA (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           *pL, *pR, *pA, *tiPL, *tiPR, *tiPA;
-    __m256          *clL, *clR, *clP, *clA;
-    __m256          m1, m2, m3, m4, m5, m6;
-    ModelInfo       *m;
-    
-    m = &modelSettings[division];
-    
-    /* flip state of node so that we are not overwriting old cond likes */
-    FlipCondLikeSpace (m, chain, p->index);
-    
-    /* find conditional likelihood pointers */
-    clL = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
-    clR = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
-    clP = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
-    clA = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
-    
-    /* find transition probabilities */
-    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
-    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
-    
-    tiPL = pL;
-    tiPR = pR;
-    tiPA = pA;
-    for (k=0; k<m->numRateCats; k++)
-    {
-        for (c=0; c<m->numVecChars; c++)
-        {
-            m1 = _mm256_broadcast_ss (&tiPL[EE]);
-            m2 = _mm256_broadcast_ss (&tiPR[EE]);
-            m3 = _mm256_broadcast_ss (&tiPA[EE]);
-            m4 = _mm256_mul_ps (m1, clL[0]);
-            m5 = _mm256_mul_ps (m2, clR[0]);
-            m6 = _mm256_mul_ps (m3, clA[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[EM]);
-            m2 = _mm256_broadcast_ss (&tiPR[EM]);
-            m3 = _mm256_broadcast_ss (&tiPA[EM]);
-            m4 = _mm256_fmadd_ps (m1, clL[1], m4);
-            m5 = _mm256_fmadd_ps (m2, clR[1], m5);
-            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[ED]);
-            m2 = _mm256_broadcast_ss (&tiPR[ED]);
-            m3 = _mm256_broadcast_ss (&tiPA[ED]);
-            m4 = _mm256_fmadd_ps (m1, clL[2], m4);
-            m5 = _mm256_fmadd_ps (m2, clR[2], m5);
-            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
-            
-            m4 = _mm256_mul_ps (m4, m5);
-            *clP++ = _mm256_mul_ps (m4, m6);
-           
-            m1 = _mm256_broadcast_ss (&tiPL[ME]);
-            m2 = _mm256_broadcast_ss (&tiPR[ME]);
-            m3 = _mm256_broadcast_ss (&tiPA[ME]);
-            m4 = _mm256_mul_ps (m1, clL[0]);
-            m5 = _mm256_mul_ps (m2, clR[0]);
-            m6 = _mm256_mul_ps (m3, clA[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[MM]);
-            m2 = _mm256_broadcast_ss (&tiPR[MM]);
-            m3 = _mm256_broadcast_ss (&tiPA[MM]);
-            m4 = _mm256_fmadd_ps (m1, clL[1], m4);
-            m5 = _mm256_fmadd_ps (m2, clR[1], m5);
-            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[MD]);
-            m2 = _mm256_broadcast_ss (&tiPR[MD]);
-            m3 = _mm256_broadcast_ss (&tiPA[MD]);
-            m4 = _mm256_fmadd_ps (m1, clL[2], m4);
-            m5 = _mm256_fmadd_ps (m2, clR[2], m5);
-            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
-
-            m4 = _mm256_mul_ps (m4, m5);
-            *clP++ = _mm256_mul_ps (m4, m6);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DE]);
-            m2 = _mm256_broadcast_ss (&tiPR[DE]);
-            m3 = _mm256_broadcast_ss (&tiPA[DE]);
-            m4 = _mm256_mul_ps (m1, clL[0]);
-            m5 = _mm256_mul_ps (m2, clR[0]);
-            m6 = _mm256_mul_ps (m3, clA[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DM]);
-            m2 = _mm256_broadcast_ss (&tiPR[DM]);
-            m3 = _mm256_broadcast_ss (&tiPA[DM]);
-            m4 = _mm256_fmadd_ps (m1, clL[1], m4);
-            m5 = _mm256_fmadd_ps (m2, clR[1], m5);
-            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DD]);
-            m2 = _mm256_broadcast_ss (&tiPR[DD]);
-            m3 = _mm256_broadcast_ss (&tiPA[DD]);
-            m4 = _mm256_fmadd_ps (m1, clL[2], m4);
-            m5 = _mm256_fmadd_ps (m2, clR[2], m5);
-            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
-            
-            m4 = _mm256_mul_ps (m4, m5);
-            *clP++ = _mm256_mul_ps (m4, m6);
-            
-
-            clL += 3;
-            clR += 3;
-            clA += 3;
-        }
-        tiPL += 9;
-        tiPR += 9;
-        tiPA += 9;
-    }
-    
-    return NO_ERROR;
-}
-#endif
-
-
-#if defined (AVX_ENABLED)
-/*----------------------------------------------------------------
- |
- |   CondLikeRoot_Dimethyl_AVX: 4by4 nucleotide model with or without rate
- |       variation using AVX instructions
- |
- -----------------------------------------------------------------*/
-int CondLikeRoot_Dimethyl_AVX (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           *pL, *pR, *pA, *tiPL, *tiPR, *tiPA;
-    __m256          *clL, *clR, *clP, *clA;
-    __m256          m1, m2, m3, m4, m5, m6, m7, m8, m9;
-    ModelInfo       *m;
-    
-    m = &modelSettings[division];
-    
-    /* flip state of node so that we are not overwriting old cond likes */
-    FlipCondLikeSpace (m, chain, p->index);
-    
-    /* find conditional likelihood pointers */
-    clL = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
-    clR = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
-    clP = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
-    clA = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
-    
-    /* find transition probabilities */
-    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
-    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
-    
-    tiPL = pL;
-    tiPR = pR;
-    tiPA = pA;
-    for (k=0; k<m->numRateCats; k++)
-    {
-        for (c=0; c<m->numVecChars; c++)
-        {
-            m1 = _mm256_broadcast_ss (&tiPL[EE]);
-            m2 = _mm256_broadcast_ss (&tiPR[EE]);
-            m3 = _mm256_broadcast_ss (&tiPA[EE]);
-            m7 = _mm256_mul_ps (m1, clL[0]);
-            m8 = _mm256_mul_ps (m2, clR[0]);
-            m9 = _mm256_mul_ps (m3, clA[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[EM]);
-            m2 = _mm256_broadcast_ss (&tiPR[EM]);
-            m3 = _mm256_broadcast_ss (&tiPA[EM]);
-            m4 = _mm256_mul_ps (m1, clL[1]);
-            m5 = _mm256_mul_ps (m2, clR[1]);
-            m6 = _mm256_mul_ps (m3, clA[1]);
-            m7 = _mm256_add_ps (m4, m7);
-            m8 = _mm256_add_ps (m5, m8);
-            m9 = _mm256_add_ps (m6, m9);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[ED]);
-            m2 = _mm256_broadcast_ss (&tiPR[ED]);
-            m3 = _mm256_broadcast_ss (&tiPA[ED]);
-            m4 = _mm256_mul_ps (m1, clL[2]);
-            m5 = _mm256_mul_ps (m2, clR[2]);
-            m6 = _mm256_mul_ps (m3, clA[2]);
-            m7 = _mm256_add_ps (m4, m7);
-            m8 = _mm256_add_ps (m5, m8);
-            m9 = _mm256_add_ps (m6, m9);
-                       
-            m7 = _mm256_mul_ps (m7, m8);
-            *clP++ = _mm256_mul_ps (m7, m9);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[ME]);
-            m2 = _mm256_broadcast_ss (&tiPR[ME]);
-            m3 = _mm256_broadcast_ss (&tiPA[ME]);
-            m7 = _mm256_mul_ps (m1, clL[0]);
-            m8 = _mm256_mul_ps (m2, clR[0]);
-            m9 = _mm256_mul_ps (m3, clA[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[MM]);
-            m2 = _mm256_broadcast_ss (&tiPR[MM]);
-            m3 = _mm256_broadcast_ss (&tiPA[MM]);
-            m4 = _mm256_mul_ps (m1, clL[1]);
-            m5 = _mm256_mul_ps (m2, clR[1]);
-            m6 = _mm256_mul_ps (m3, clA[1]);
-            m7 = _mm256_add_ps (m4, m7);
-            m8 = _mm256_add_ps (m5, m8);
-            m9 = _mm256_add_ps (m6, m9);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[MD]);
-            m2 = _mm256_broadcast_ss (&tiPR[MD]);
-            m3 = _mm256_broadcast_ss (&tiPA[MD]);
-            m4 = _mm256_mul_ps (m1, clL[2]);
-            m5 = _mm256_mul_ps (m2, clR[2]);
-            m6 = _mm256_mul_ps (m3, clA[2]);
-            m7 = _mm256_add_ps (m4, m7);
-            m8 = _mm256_add_ps (m5, m8);
-            m9 = _mm256_add_ps (m6, m9);
-            
-            m7 = _mm256_mul_ps (m7, m8);
-            *clP++ = _mm256_mul_ps (m7, m9);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DE]);
-            m2 = _mm256_broadcast_ss (&tiPR[DE]);
-            m3 = _mm256_broadcast_ss (&tiPA[DE]);
-            m7 = _mm256_mul_ps (m1, clL[0]);
-            m8 = _mm256_mul_ps (m2, clR[0]);
-            m9 = _mm256_mul_ps (m3, clA[0]);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DM]);
-            m2 = _mm256_broadcast_ss (&tiPR[DM]);
-            m3 = _mm256_broadcast_ss (&tiPA[DM]);
-            m4 = _mm256_mul_ps (m1, clL[1]);
-            m5 = _mm256_mul_ps (m2, clR[1]);
-            m6 = _mm256_mul_ps (m3, clA[1]);
-            m7 = _mm256_add_ps (m4, m7);
-            m8 = _mm256_add_ps (m5, m8);
-            m9 = _mm256_add_ps (m6, m9);
-            
-            m1 = _mm256_broadcast_ss (&tiPL[DD]);
-            m2 = _mm256_broadcast_ss (&tiPR[DD]);
-            m3 = _mm256_broadcast_ss (&tiPA[DD]);
-            m4 = _mm256_mul_ps (m1, clL[2]);
-            m5 = _mm256_mul_ps (m2, clR[2]);
-            m6 = _mm256_mul_ps (m3, clA[2]);
-            m7 = _mm256_add_ps (m4, m7);
-            m8 = _mm256_add_ps (m5, m8);
-            m9 = _mm256_add_ps (m6, m9);
-            
-            m7 = _mm256_mul_ps (m7, m8);
-            *clP++ = _mm256_mul_ps (m7, m9);
-            
-            clL += 3;
-            clR += 3;
-            clA += 3;
-        }
-        tiPL += 9;
-        tiPR += 9;
-        tiPA += 9;
-    }
-    
-    return NO_ERROR;
-}
-#endif
-
-
-#if defined (SSE_ENABLED)
-/*----------------------------------------------------------------
-|
-|   CondLikeRoot_Dimethyl_SSE: 4by4 nucleotide model with or without rate
-|       variation using SSE instructions
-|
------------------------------------------------------------------*/
-int CondLikeRoot_Dimethyl_SSE (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           *pL, *pR, *pA, *tiPL, *tiPR, *tiPA;
-    __m128          *clL, *clR, *clP, *clA;
-    __m128          m1, m2, m3, m4, m5, m6, m7, m8, m9;
-    ModelInfo       *m;
-
-    m = &modelSettings[division];
-
-    /* flip state of node so that we are not overwriting old cond likes */
-    FlipCondLikeSpace (m, chain, p->index);
-    
-    /* find conditional likelihood pointers */
-    clL = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
-    clR = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
-    clP = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
-    clA = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
-
-    /* find transition probabilities */
-    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
-    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
-
-    tiPL = pL;
-    tiPR = pR;
-    tiPA = pA;
-
-    for (k=0; k<m->numRateCats; k++)
-        {
-        for (c=0; c<m->numVecChars; c++)
-            {
-            m1 = _mm_load1_ps (&tiPL[EE]);
-            m2 = _mm_load1_ps (&tiPR[EE]);
-            m3 = _mm_load1_ps (&tiPA[EE]);
-            m7 = _mm_mul_ps (m1, clL[0]);
-            m8 = _mm_mul_ps (m2, clR[0]);
-            m9 = _mm_mul_ps (m3, clA[0]);
-
-            m1 = _mm_load1_ps (&tiPL[EM]);
-            m2 = _mm_load1_ps (&tiPR[EM]);
-            m3 = _mm_load1_ps (&tiPA[EM]);
-            m4 = _mm_mul_ps (m1, clL[1]);
-            m5 = _mm_mul_ps (m2, clR[1]);
-            m6 = _mm_mul_ps (m3, clA[1]);
-            m7 = _mm_add_ps (m4, m7);
-            m8 = _mm_add_ps (m5, m8);
-            m9 = _mm_add_ps (m6, m9);
-
-            m1 = _mm_load1_ps (&tiPL[ED]);
-            m2 = _mm_load1_ps (&tiPR[ED]);
-            m3 = _mm_load1_ps (&tiPA[ED]);
-            m4 = _mm_mul_ps (m1, clL[2]);
-            m5 = _mm_mul_ps (m2, clR[2]);
-            m6 = _mm_mul_ps (m3, clA[2]);
-            m7 = _mm_add_ps (m4, m7);
-            m8 = _mm_add_ps (m5, m8);
-            m9 = _mm_add_ps (m6, m9);
-
-            m7 = _mm_mul_ps (m7, m8);
-            *clP++ = _mm_mul_ps (m7, m9);
-
-            m1 = _mm_load1_ps (&tiPL[ME]);
-            m2 = _mm_load1_ps (&tiPR[ME]);
-            m3 = _mm_load1_ps (&tiPA[ME]);
-            m7 = _mm_mul_ps (m1, clL[0]);
-            m8 = _mm_mul_ps (m2, clR[0]);
-            m9 = _mm_mul_ps (m3, clA[0]);
-
-            m1 = _mm_load1_ps (&tiPL[MM]);
-            m2 = _mm_load1_ps (&tiPR[MM]);
-            m3 = _mm_load1_ps (&tiPA[MM]);
-            m4 = _mm_mul_ps (m1, clL[1]);
-            m5 = _mm_mul_ps (m2, clR[1]);
-            m6 = _mm_mul_ps (m3, clA[1]);
-            m7 = _mm_add_ps (m4, m7);
-            m8 = _mm_add_ps (m5, m8);
-            m9 = _mm_add_ps (m6, m9);
-
-            m1 = _mm_load1_ps (&tiPL[MD]);
-            m2 = _mm_load1_ps (&tiPR[MD]);
-            m3 = _mm_load1_ps (&tiPA[MD]);
-            m4 = _mm_mul_ps (m1, clL[2]);
-            m5 = _mm_mul_ps (m2, clR[2]);
-            m6 = _mm_mul_ps (m3, clA[2]);
-            m7 = _mm_add_ps (m4, m7);
-            m8 = _mm_add_ps (m5, m8);
-            m9 = _mm_add_ps (m6, m9);
-
-            m7 = _mm_mul_ps (m7, m8);
-            *clP++ = _mm_mul_ps (m7, m9);
-
-            m1 = _mm_load1_ps (&tiPL[DE]);
-            m2 = _mm_load1_ps (&tiPR[DE]);
-            m3 = _mm_load1_ps (&tiPA[DE]);
-            m7 = _mm_mul_ps (m1, clL[0]);
-            m8 = _mm_mul_ps (m2, clR[0]);
-            m9 = _mm_mul_ps (m3, clA[0]);
-
-            m1 = _mm_load1_ps (&tiPL[DM]);
-            m2 = _mm_load1_ps (&tiPR[DM]);
-            m3 = _mm_load1_ps (&tiPA[DM]);
-            m4 = _mm_mul_ps (m1, clL[1]);
-            m5 = _mm_mul_ps (m2, clR[1]);
-            m6 = _mm_mul_ps (m3, clA[1]);
-            m7 = _mm_add_ps (m4, m7);
-            m8 = _mm_add_ps (m5, m8);
-            m9 = _mm_add_ps (m6, m9);
-
-            m1 = _mm_load1_ps (&tiPL[DD]);
-            m2 = _mm_load1_ps (&tiPR[DD]);
-            m3 = _mm_load1_ps (&tiPA[DD]);
-            m4 = _mm_mul_ps (m1, clL[2]);
-            m5 = _mm_mul_ps (m2, clR[2]);
-            m6 = _mm_mul_ps (m3, clA[2]);
-            m7 = _mm_add_ps (m4, m7);
-            m8 = _mm_add_ps (m5, m8);
-            m9 = _mm_add_ps (m6, m9);
-
-            m7 = _mm_mul_ps (m7, m8);
-            *clP++ = _mm_mul_ps (m7, m9);
-
-            clL += 3;
-            clR += 3;
-            clA += 3;
-            }
-        tiPL += 9;
-        tiPR += 9;
-        tiPA += 9;
-        }
-
-    return NO_ERROR;
-}
-#endif
-
-
-
-/*----------------------------------------------------------------
-|
-|   CondLikeRoot_Dimethyl: 3by3 dimethyl model with or without rate
-|       variation
-|
------------------------------------------------------------------*/
-int CondLikeRoot_Dimethyl (TreeNode *p, int division, int chain)
-{
-    int             a, c, h, i, j, k, shortCut, *lState=NULL, *rState=NULL, *aState=NULL;
-    CLFlt           *clL, *clR, *clP, *clA, *pL, *pR, *pA, *tiPL, *tiPR, *tiPA;
-    ModelInfo       *m;
-    
-    m = &modelSettings[division];
-
-    /* flip state of node so that we are not overwriting old cond likes */
-    FlipCondLikeSpace (m, chain, p->index);
-   
-    /* find conditional likelihood pointers */
-    clL = m->condLikes[m->condLikeIndex[chain][p->left->index ]];
-    clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
-    clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
-    clA = m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
-
-    /* find transition probabilities (or calculate instead) */
-    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
-    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
-
-    /* find likelihoods of site patterns for left branch if terminal */
-    shortCut = 0;
-#   if !defined (DEBUG_NOSHORTCUTS)
-    if (p->left->left == NULL && m->isPartAmbig[p->left->index] == NO)
-        {
-        shortCut |= 1;
-        lState = m->termState[p->left->index];
-        tiPL = pL;
-        for (k=j=0; k<m->numRateCats; k++)
-            {
-            for (i=0; i<3; i++)
-                {
-                preLikeL[j++] = tiPL[0];
-                preLikeL[j++] = tiPL[3];
-                preLikeL[j++] = tiPL[6];
-                tiPL++;
-                }
-            /* for ambiguous */
-            for (i=0; i<3; i++)
-                preLikeL[j++] = 1.0;
-            tiPL += 6;
-            }
-        }
-
-    /* find likelihoods of site patterns for right branch if terminal */
-    if (p->right->left == NULL && m->isPartAmbig[p->right->index] == NO)
-        {
-        shortCut |= 2;
-        rState = m->termState[p->right->index];
-        tiPR = pR;
-        for (k=j=0; k<m->numRateCats; k++)
-            {
-            for (i=0; i<3; i++)
-                {
-                preLikeR[j++] = tiPR[0];
-                preLikeR[j++] = tiPR[3];
-                preLikeR[j++] = tiPR[6];
-                tiPR++;
-                }
-            /* for ambiguous */
-            for (i=0; i<3; i++)
-                preLikeR[j++] = 1.0;
-            tiPR += 6;
-            }
-        }
-
-    /* find likelihoods of site patterns for anc branch, always terminal */
-    if (m->isPartAmbig[p->anc->index] == YES)
-        {
-        shortCut = 4;
-        }
-    else 
-        {
-        aState = m->termState[p->anc->index];
-        tiPA = pA;
-        for (k=j=0; k<m->numRateCats; k++)
-            {
-            for (i=0; i<3; i++)
-                {
-                preLikeA[j++] = tiPA[0];
-                preLikeA[j++] = tiPA[3];
-                preLikeA[j++] = tiPA[6];
-                tiPA++;
-                }
-            /* for ambiguous */
-            for (i=0; i<3; i++)
-                preLikeA[j++] = 1.0;
-            tiPA += 6;
-            }
-        }
-#   else
-    shortCut = 4;
-#   endif
-
-    switch (shortCut)
-        {
-    case 4:
-        tiPL = pL;
-        tiPR = pR;
-        tiPA = pA;
-        for (k=h=0; k<m->numRateCats; k++)
-            {
-            for (c=0; c<m->numChars; c++)
-                {
-                clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
-                            *(tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2])
-                            *(tiPA[EE]*clA[0] + tiPA[EM]*clA[1] + tiPA[ED]*clA[2]);
-                clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
-                            *(tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2])
-                            *(tiPA[ME]*clA[0] + tiPA[MM]*clA[1] + tiPA[MD]*clA[2]);
-                clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
-                            *(tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2])
-                            *(tiPA[DE]*clA[0] + tiPA[DM]*clA[1] + tiPA[DD]*clA[2]);
-                clL += 3;
-                clR += 3;
-                clA += 3;
-                }
-            tiPL += 9;
-            tiPR += 9;
-            tiPA += 9;
-            }
-        break;
-
-    case 0:
-        tiPL = pL;
-        tiPR = pR;
-        for (k=h=0; k<m->numRateCats; k++)
-            {
-            for (c=0; c<m->numChars; c++)
-                {
-                i = aState[c] + k*12;
-                clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
-                            *(tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2])
-                            *preLikeA[i++];
-                clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
-                            *(tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2])
-                            *preLikeA[i++];
-                clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
-                            *(tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2])
-                            *preLikeA[i++];
-                clL += 3;
-                clR += 3;
-                }
-            tiPL += 9;
-            tiPR += 9;
-            }
-        break;
-
-    case 1:
-        tiPR = pR;
-        for (k=h=0; k<m->numRateCats; k++)
-            {
-            for (c=0; c<m->numChars; c++)
-                {
-                i = lState[c] + k*12;
-                j = aState[c] + k*12;
-                clP[h++] =   (tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2])
-                            *preLikeL[i++]*preLikeA[j++];
-                clP[h++] =   (tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2])
-                            *preLikeL[i++]*preLikeA[j++];
-                clP[h++] =   (tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2])
-                            *preLikeL[i++]*preLikeA[j++];
-                clR += 3;
-                }
-            tiPR += 9;
-            }
-        break;
-
-    case 2:
-        tiPL = pL;
-        for (k=h=0; k<m->numRateCats; k++)
-            {
-            for (c=0; c<m->numChars; c++)
-                {
-                i = rState[c] + k*12;
-                j = aState[c] + k*12;
-                clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
-                            *preLikeR[i++]*preLikeA[j++];
-                clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
-                            *preLikeR[i++]*preLikeA[j++];
-                clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
-                            *preLikeR[i++]*preLikeA[j++];
-                clL += 3;
-                }
-            tiPL += 9;
-            }
-        break;
-
-    case 3:
-        for (k=h=0; k<m->numRateCats; k++)
-            {
-            for (c=0; c<m->numChars; c++)
-                {
-                a = lState[c] + k*12;
-                i = rState[c] + k*12;
-                j = aState[c] + k*12;
-                clP[h++] =   preLikeL[a++]*preLikeR[i++]*preLikeA[j++];
-                clP[h++] =   preLikeL[a++]*preLikeR[i++]*preLikeA[j++];
-                clP[h++] =   preLikeL[a++]*preLikeR[i++]*preLikeA[j++];
-                clP[h++] =   preLikeL[a++]*preLikeR[i++]*preLikeA[j++];
-                }
-            }
-        break;
-        }
-
-    return NO_ERROR;
-}
-
 
 
 /*----------------------------------------------------------------
@@ -6253,203 +5132,6 @@ int CondLikeScaler_Gen_GibbsGamma (TreeNode *p, int division, int chain)
 
 /*----------------------------------------------------------------
 |
-|   CondLikeScaler_Dimethyl: 3by3 dimethyl model with or without rate
-|       variation
-|
------------------------------------------------------------------*/
-int CondLikeScaler_Dimethyl (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           scaler, *scP, *lnScaler, *clPtr, **clP;
-    ModelInfo       *m;
-
-    m = &modelSettings[division];
-
-    /* find conditional likelihood pointers */
-    clPtr = m->condLikes[m->condLikeIndex[chain][p->index]];
-    clP   = m->clP;
-    for (k=0; k<m->numRateCats; k++)
-        {
-        clP[k] = clPtr;
-        clPtr += m->numChars * m->numModelStates;
-        }
-    
-    /* find node scalers */
-    scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
-
-    /* find site scalers */
-    lnScaler = m->scalers[m->siteScalerIndex[chain]];
-
-    /* rescale values */
-    for (c=0; c<m->numChars; c++)
-        {
-        scaler = 0.0;
-        for (k=0; k<m->numRateCats; k++)
-            {
-            if (clP[k][0] > scaler)
-                scaler = clP[k][0];
-            if (clP[k][1] > scaler)
-                scaler = clP[k][1];
-            if (clP[k][2] > scaler)
-                scaler = clP[k][2];
-            }
-
-        for (k=0; k<m->numRateCats; k++)
-            {
-            clP[k][0] /= scaler;
-            clP[k][1] /= scaler;
-            clP[k][2] /= scaler;
-            clP[k] += 3;
-            }
-
-        scP[c]       = (CLFlt) log(scaler); /* store node scaler */
-        lnScaler[c] += scP[c];              /* add into tree scaler  */
-        }
-
-    m->unscaledNodes[chain][p->index] = 0;   /* set unscaled nodes to 0 */
-
-    return NO_ERROR;
-}
-
-#if defined (AVX_ENABLED)
-/*----------------------------------------------------------------
- |
- |   CondLikeScaler_Dimethyl_AVX: 4by4 nucleotide model with or without rate
- |       variation using AVX (or AVX + FMA) code
- |
- -----------------------------------------------------------------*/
-int CondLikeScaler_Dimethyl_AVX (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           *scP, *lnScaler;
-    __m256          *clPtr, **clP, *scP_AVX, m1;
-    ModelInfo       *m;
-    
-    m = &modelSettings[division];
-    
-    /* find conditional likelihood pointers */
-    clPtr = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index]];
-    clP   = m->clP_AVX;
-    for (k=0; k<m->numRateCats; k++)
-    {
-        clP[k] = clPtr;
-        clPtr += m->numVecChars * m->numModelStates;
-    }
-    
-    /* find node scalers */
-    scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
-    scP_AVX = (__m256 *) scP;
-    
-    /* find site scalers */
-    lnScaler = m->scalers[m->siteScalerIndex[chain]];
-    
-    /* rescale */
-    for (c=0; c<m->numVecChars; c++)
-    {
-        m1 = _mm256_setzero_ps ();
-
-        for (k=0; k<m->numRateCats; k++)
-        {
-            m1 = _mm256_max_ps (m1, clP[k][0]);
-            m1 = _mm256_max_ps (m1, clP[k][1]);
-            m1 = _mm256_max_ps (m1, clP[k][2]);
-        }
-        
-        for (k=0; k<m->numRateCats; k++)
-        {
-            *clP[k] = _mm256_div_ps (*clP[k], m1);
-            clP[k]++;
-            *clP[k] = _mm256_div_ps (*clP[k], m1);
-            clP[k]++;
-            *clP[k] = _mm256_div_ps (*clP[k], m1);
-            clP[k]++;
-        }
-        
-        (*scP_AVX++) = m1;
-    }
-
-    /* update site scalers */
-    for (c=0; c<m->numChars; c++)
-        lnScaler[c] += (scP[c] = logf (scP[c]));    /* add log of new scaler into tree scaler  */
-    
-    m->unscaledNodes[chain][p->index] = 0;   /* set unscaled nodes to 0 */
-
-    return NO_ERROR;
-
-}
-#endif
-
-
-#if defined (SSE_ENABLED)
-/*----------------------------------------------------------------
-|
-|   CondLikeScaler_Dimethyl_SSE: 4by4 nucleotide model with or without rate
-|       variation using SSE code
-|
------------------------------------------------------------------*/
-int CondLikeScaler_Dimethyl_SSE (TreeNode *p, int division, int chain)
-{
-    int             c, k;
-    CLFlt           *scP, *lnScaler;
-    __m128          *clPtr, **clP, *scP_SSE, m1;
-    ModelInfo       *m;
-    
-    m = &modelSettings[division];
-
-    /* find conditional likelihood pointers */
-    clPtr = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->index]];
-    clP   = m->clP_SSE;
-    for (k=0; k<m->numRateCats; k++)
-        {
-        clP[k] = clPtr;
-        clPtr += m->numVecChars * m->numModelStates;
-        }
-    
-    /* find node scalers */
-    scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
-    scP_SSE = (__m128 *) scP;
-
-    /* find site scalers */
-    lnScaler = m->scalers[m->siteScalerIndex[chain]];
-
-    /* rescale */
-    for (c=0; c<m->numVecChars; c++)
-        {
-        m1 = _mm_setzero_ps ();
-        for (k=0; k<m->numRateCats; k++)
-            {
-            m1 = _mm_max_ps (m1, clP[k][0]);
-            m1 = _mm_max_ps (m1, clP[k][1]);
-            m1 = _mm_max_ps (m1, clP[k][2]);
-            }
-
-        for (k=0; k<m->numRateCats; k++)
-            {
-            *clP[k] = _mm_div_ps (*clP[k], m1);
-            clP[k]++;
-            *clP[k] = _mm_div_ps (*clP[k], m1);
-            clP[k]++;
-            *clP[k] = _mm_div_ps (*clP[k], m1);
-            clP[k]++;
-            }
-
-        (*scP_SSE++) = m1;
-        }
-
-    /* update site scalers */
-    for (c=0; c<m->numChars; c++)
-        lnScaler[c] += (scP[c] = (CLFlt)(log (scP[c])));    /* add log of new scaler into tree scaler  */
-
-    m->unscaledNodes[chain][p->index] = 0;   /* number of unscaled nodes is 0 */
-
-    return NO_ERROR;
-    
-}
-#endif
-
-
-/*----------------------------------------------------------------
-|
 |   CondLikeScaler_NUC4: 4by4 nucleotide model with or without rate
 |       variation
 |
@@ -6950,13 +5632,11 @@ void FlipCondLikeSpace (ModelInfo* m, int chain, int nodeIndex)
     m->condLikeIndex[chain][nodeIndex] = m->condLikeScratchIndex[nodeIndex];
     m->condLikeScratchIndex[nodeIndex] = temp;
 
-    if (*GetParamVals (m->readErrRate, chain, state[chain]) > 0.0 && nodeIndex < numLocalTaxa)
+    if (m->useReadErr && nodeIndex < numLocalTaxa)
         FlipReadErrClSpace(m,chain,nodeIndex);
-
-
 }
 
-/* FlipCondLikeSpace: Flip space for conditional likelihoods with scratch area */
+/* FlipReadErrClSpace: Flip space for conditional likelihoods with scratch area */
 void FlipReadErrClSpace (ModelInfo* m, int chain, int nodeIndex)
 {
     int         temp;
@@ -7013,7 +5693,6 @@ void FlipTiProbsSpace (ModelInfo* m, int chain, int nodeIndex)
     temp                              = m->tiProbsIndex[chain][nodeIndex];
     m->tiProbsIndex[chain][nodeIndex] = m->tiProbsScratchIndex[nodeIndex];
     m->tiProbsScratchIndex[nodeIndex] = temp;
-
 }
 
 
@@ -7562,672 +6241,6 @@ int Likelihood_Gen_GibbsGamma (TreeNode *p, int division, int chain, MrBFlt *lnL
         
     return NO_ERROR;
 }
-
-
-/*------------------------------------------------------------------
-|
-|   Likelihood_Dimethyl: 3by3 nucleotide models with or without rate
-|       variation
-|
--------------------------------------------------------------------*/
-int Likelihood_Dimethyl (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
-{
-    int             c, k, hasPInvar;
-    MrBFlt          freq, likeI, bs[3], like, pInvar=0.0, alpha, beta, *dimRates=NULL,
-                    denom;
-    CLFlt           *clPtr, **clP, *lnScaler, *nSitesOfPat, *clInvar=NULL;
-    ModelInfo       *m;
-
-    /* find model settings and pInvar, invar cond likes */
-    m = &modelSettings[division];
-
-    if (m->pInvar == NULL)
-        {
-        hasPInvar = NO;
-        }
-    else
-        {
-        hasPInvar = YES;
-        pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
-        clInvar = m->invCondLikes;
-        }
-
-    /* find conditional likelihood pointers */
-    clPtr = m->condLikes[m->condLikeIndex[chain][p->index]];
-    clP = m->clP;
-  
-    for (k=0; k<m->numRateCats; k++)
-        {
-        clP[k] = clPtr;
-        clPtr += m->numChars * m->numModelStates;
-        }
-    
-    /* find base frequencies */
-    /*  bs = GetParamSubVals (m->stateFreq, chain, state[chain]); */
-    dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
-    alpha = dimRates[0];
-    beta = dimRates[1]; /*  dimRates[1]; */
-    denom = (alpha+beta) * (alpha+beta);
-
-    bs[0] = (beta*beta)/denom;
-    bs[1] = (2.0*alpha*beta)/denom;
-    bs[2] = (alpha*alpha)/denom;
-
-    /* find category frequencies */
-    if (hasPInvar == NO)
-        freq =  1.0 /  m->numRateCats;
-    else
-        freq =  (1.0 - pInvar) /  m->numRateCats;
-
-    /* find tree scaler */
-    lnScaler = m->scalers[m->siteScalerIndex[chain]];
-
-    /* find nSitesOfPat */
-    nSitesOfPat = numSitesOfPat + (whichSitePats*numCompressedChars) + m->compCharStart;
-
-    /* reset lnL */
-    *lnL = 0.0;
-
-    /* loop over characters */
-    if (hasPInvar == NO)
-        {
-        for (c=0; c<m->numChars; c++)
-            {
-            like = 0.0;
-            for (k=0; k<m->numRateCats; k++)
-                {
-                like += (clP[k][0] * bs[0] + clP[k][1] * bs[1] + clP[k][2] * bs[2]);
-                clP[k] += 3;
-                }
-            like *= freq;
-            
-            /* check against LIKE_EPSILON (values close to zero are problematic) */
-            if (like < LIKE_EPSILON)
-                {
-#   ifdef DEBUG_LIKELIHOOD
-                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-                (*lnL) = MRBFLT_NEG_MAX;
-                abortMove = YES;
-                return ERROR;
-                }
-            else    
-                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
-            }
-        }
-    else
-        {
-        /* has invariable category */
-        for (c=0; c<m->numChars; c++)
-            {
-            like = 0.0;
-            for (k=0; k<m->numRateCats; k++)
-                {
-                like += (clP[k][0] * bs[0] + clP[k][1] * bs[1] + clP[k][2] * bs[2]);
-                clP[k] += 3;
-                }
-            like *= freq;
-            likeI = (clInvar[0] * bs[0] + clInvar[1] * bs[1] + clInvar[2] * bs[2]) * pInvar;
-            if (lnScaler[c] < -200)
-                {
-                /* we are not going to be able to exponentiate the scaling factor */
-                if (likeI > 1E-70)
-                    {
-                    /* forget about like; it is going to be insignificant compared to likeI */
-                    like = likeI;
-                    }
-                else
-                    {
-                    /* treat likeI as if 0.0, that is, ignore it completely */
-                    }
-                }
-            else
-                like = like + (likeI / exp (lnScaler[c]));
-
-            clInvar += 3;
-
-            /* check against LIKE_EPSILON (values close to zero are problematic) */
-            if (like < LIKE_EPSILON)
-                {
-#   ifdef DEBUG_LIKELIHOOD
-                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-                (*lnL) = MRBFLT_NEG_MAX;
-                abortMove = YES;
-                return ERROR;
-                }
-            else    
-                {
-                (*lnL) += (lnScaler[c] + log(like)) * nSitesOfPat[c];
-                }
-            }       
-        }
-
-    return NO_ERROR;
-}
-
-#if defined (FMA_ENABLED)
-/*------------------------------------------------------------------
- |
- |   Likelihood_Dimethyl_FMA: 4by4 nucleotide models with or without rate
- |       variation using AVX + FMA code
- |
- -------------------------------------------------------------------*/
-int Likelihood_Dimethyl_FMA (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
-{
-    int             c, k, hasPInvar;
-    MrBFlt          freq, bs[3], pInvar=0.0, like, likeI;
-    CLFlt           *lnScaler, *nSitesOfPat, *lnL_Vec, *lnLI_Vec;
-    __m256          *clPtr, **clP, *clInvar=NULL;
-    __m256          mE, mM, mD, mFreq, mPInvar=_mm256_set1_ps(0.0f), mLike;
-    ModelInfo       *m;
-    MrBFlt          alpha, beta, denom, *dimRates=NULL;
-
-    /* find model settings and pInvar, invar cond likes */
-    m = &modelSettings[division];
-    if (m->pInvar == NULL)
-    {
-        hasPInvar = NO;
-    }
-    else
-    {
-        hasPInvar = YES;
-        pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
-        mPInvar = _mm256_set1_ps ((CLFlt)(pInvar));
-        clInvar = (__m256 *) (m->invCondLikes);
-    }
-
-    /* find conditional likelihood pointers */
-    clPtr = (__m256 *) (m->condLikes[m->condLikeIndex[chain][p->index]]);
-    clP = m->clP_AVX;
-    for (k=0; k<m->numRateCats; k++)
-    {
-        clP[k] = clPtr;
-        clPtr += m->numVecChars * m->numModelStates;
-    }
-    lnL_Vec  = m->lnL_Vec;
-    lnLI_Vec = m->lnLI_Vec;
-
-    /* find base frequencies */
-    dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
-    alpha = dimRates[0];
-    beta = dimRates[1]; /*  dimRates[1]; */
-    denom = (alpha+beta) * (alpha+beta);
-
-    bs[0] = (beta*beta)/denom;
-    bs[1] = (2.0*alpha*beta)/denom;
-    bs[2] = (alpha*alpha)/denom;
-
-    mE = _mm256_set1_ps ((CLFlt)(bs[0]));
-    mM = _mm256_set1_ps ((CLFlt)(bs[1]));
-    mD = _mm256_set1_ps ((CLFlt)(bs[2]));
-    
-    /* find category frequencies */
-    if (hasPInvar == NO)
-        freq =  1.0 / m->numRateCats;
-    else
-        freq =  (1.0 - pInvar) / m->numRateCats;
-    mFreq = _mm256_set1_ps ((CLFlt)(freq));
-    
-    /* find tree scaler */
-    lnScaler = m->scalers[m->siteScalerIndex[chain]];
-    
-    /* find nSitesOfPat */
-    nSitesOfPat = numSitesOfPat + (whichSitePats*numCompressedChars) + m->compCharStart;
-    
-    /* reset lnL */
-    *lnL = 0.0;
-    
-    /* calculate variable likelihood */
-    for (c=0; c<m->numVecChars; c++)
-    {
-        mLike = _mm256_setzero_ps ();
-        for (k=0; k<m->numRateCats; k++)
-        {
-            mLike = _mm256_fmadd_ps (clP[k][0], mE, mLike);
-            mLike = _mm256_fmadd_ps (clP[k][1], mM, mLike);
-            mLike = _mm256_fmadd_ps (clP[k][2], mD, mLike);
-            clP[k] += 3;
-        }
-        mLike = _mm256_mul_ps (mLike, mFreq);
-        _mm256_store_ps (lnL_Vec, mLike);
-        lnL_Vec += m->numFloatsPerVec;
-    }
-    
-    /* calculate invariable likelihood */
-    if (hasPInvar == YES)
-    {
-        for (c=0; c<m->numVecChars; c++)
-        {
-            mLike = _mm256_mul_ps (clInvar[0], mE);
-            mLike = _mm256_fmadd_ps (clInvar[1], mM, mLike);
-            mLike = _mm256_fmadd_ps (clInvar[2], mD, mLike);
-            mLike = _mm256_mul_ps (mLike, mPInvar);
-            _mm256_store_ps (lnLI_Vec, mLike);
-            clInvar += 3;
-            lnLI_Vec += m->numFloatsPerVec;
-        }
-    }
-    
-    /* accumulate results */
-    if (hasPInvar == NO)
-    {
-        for (c=0; c<m->numChars; c++)
-        {
-            like = m->lnL_Vec[c];
-            /* check against LIKE_EPSILON (values close to zero are problematic) */
-            if (like < LIKE_EPSILON)
-            {
-#   ifdef DEBUG_LIKELIHOOD
-                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-                (*lnL) = MRBFLT_NEG_MAX;
-                abortMove = YES;
-                return ERROR;
-            }
-            else
-            {
-                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
-            }
-        }
-    }
-    else
-    {
-        /* has invariable category */
-        for (c=0; c<m->numChars; c++)
-        {
-            like  = m->lnL_Vec[c];
-            likeI = m->lnLI_Vec[c];
-            if (lnScaler[c] < -200)
-            {
-                /* we are not going to be able to exponentiate the scaling factor */
-                if (likeI > 1E-70)
-                {
-                    /* forget about like; it is going to be insignificant compared to likeI */
-                    like = likeI;
-                }
-                else
-                {
-                    /* treat likeI as if 0.0, that is, ignore it completely */
-                }
-            }
-            else
-                like = like + (likeI / exp (lnScaler[c]));
-            
-            /* check against LIKE_EPSILON (values close to zero are problematic) */
-            if (like < LIKE_EPSILON)
-            {
-#   ifdef DEBUG_LIKELIHOOD
-                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-                (*lnL) = MRBFLT_NEG_MAX;
-                abortMove = YES;
-                return ERROR;
-            }
-            else
-            {
-                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
-            }
-        }
-    }
-    
-    return NO_ERROR;
-}
-#endif
-
-
-#if defined (AVX_ENABLED)
-/*------------------------------------------------------------------
- |
- |   Likelihood_Dimethyl_AVX: 4by4 nucleotide models with or without rate
- |       variation using AVX code
- |
- -------------------------------------------------------------------*/
-int Likelihood_Dimethyl_AVX (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
-{
-    int             c, k, hasPInvar;
-    MrBFlt          freq, bs[3], pInvar=0.0, like, likeI;
-    CLFlt           *lnScaler, *nSitesOfPat, *lnL_Vec, *lnLI_Vec;
-    __m256          *clPtr, **clP, *clInvar=NULL;
-    __m256          m1, mE, mM, mD,  mFreq, mPInvar=_mm256_set1_ps(0.0f), mLike;
-    ModelInfo       *m;
-    MrBFlt          alpha, beta, denom, *dimRates;
-
-    /* find model settings and pInvar, invar cond likes */
-    m = &modelSettings[division];
-    if (m->pInvar == NULL)
-    {
-        hasPInvar = NO;
-    }
-    else
-    {
-        hasPInvar = YES;
-        pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
-        mPInvar = _mm256_set1_ps ((CLFlt)(pInvar));
-        clInvar = (__m256 *) (m->invCondLikes);
-    }
-    
-    /* find conditional likelihood pointers */
-    clPtr = (__m256 *) (m->condLikes[m->condLikeIndex[chain][p->index]]);
-    clP = m->clP_AVX;
-    for (k=0; k<m->numRateCats; k++)
-    {
-        clP[k] = clPtr;
-        clPtr += m->numVecChars * m->numModelStates;
-    }
-    lnL_Vec  = m->lnL_Vec;
-    lnLI_Vec = m->lnLI_Vec;
-    
-    /* find base frequencies */
-    dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
-    alpha = dimRates[0];
-    beta = dimRates[1]; /*  dimRates[1]; */
-    denom = (alpha+beta) * (alpha+beta);
-
-    bs[0] = (beta*beta)/denom;
-    bs[1] = (2.0*alpha*beta)/denom;
-    bs[2] = (alpha*alpha)/denom;
-
-    mE = _mm256_set1_ps ((CLFlt)(bs[0]));
-    mM = _mm256_set1_ps ((CLFlt)(bs[1]));
-    mD = _mm256_set1_ps ((CLFlt)(bs[2]));
-    
-    /* find category frequencies */
-    if (hasPInvar == NO)
-        freq =  1.0 / m->numRateCats;
-    else
-        freq =  (1.0 - pInvar) / m->numRateCats;
-    mFreq = _mm256_set1_ps ((CLFlt)(freq));
-    
-    /* find tree scaler */
-    lnScaler = m->scalers[m->siteScalerIndex[chain]];
-    
-    /* find nSitesOfPat */
-    nSitesOfPat = numSitesOfPat + (whichSitePats*numCompressedChars) + m->compCharStart;
-    
-    /* reset lnL */
-    *lnL = 0.0;
-    
-    /* calculate variable likelihood */
-    for (c=0; c<m->numVecChars; c++)
-    {
-        mLike = _mm256_setzero_ps ();
-        for (k=0; k<m->numRateCats; k++)
-        {
-            m1    = _mm256_mul_ps (clP[k][0], mE);
-            mLike = _mm256_add_ps (mLike, m1);
-            m1    = _mm256_mul_ps (clP[k][1], mM);
-            mLike = _mm256_add_ps (mLike, m1);
-            m1    = _mm256_mul_ps (clP[k][2], mD);
-            mLike = _mm256_add_ps (mLike, m1);
-            clP[k] += 3;
-        }
-        mLike = _mm256_mul_ps (mLike, mFreq);
-        _mm256_store_ps (lnL_Vec, mLike);
-        lnL_Vec += m->numFloatsPerVec;
-    }
-    
-    /* calculate invariable likelihood */
-    if (hasPInvar == YES)
-    {
-        for (c=0; c<m->numVecChars; c++)
-        {
-            mLike = _mm256_mul_ps (clInvar[0], mE);
-            m1    = _mm256_mul_ps (clInvar[1], mM);
-            mLike = _mm256_add_ps (mLike, m1);
-            m1    = _mm256_mul_ps (clInvar[2], mD);
-            mLike = _mm256_add_ps (mLike, m1);
-            mLike = _mm256_mul_ps (mLike, mPInvar);
-            
-            _mm256_store_ps (lnLI_Vec, mLike);
-            clInvar += 3;
-            lnLI_Vec += m->numFloatsPerVec;
-        }
-    }
-    
-    /* accumulate results */
-    if (hasPInvar == NO)
-    {
-        for (c=0; c<m->numChars; c++)
-        {
-            like = m->lnL_Vec[c];
-            /* check against LIKE_EPSILON (values close to zero are problematic) */
-            if (like < LIKE_EPSILON)
-            {
-#   ifdef DEBUG_LIKELIHOOD
-                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-                (*lnL) = MRBFLT_NEG_MAX;
-                abortMove = YES;
-                return ERROR;
-            }
-            else
-            {
-                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
-            }
-        }
-    }
-    else
-    {
-        /* has invariable category */
-        for (c=0; c<m->numChars; c++)
-        {
-            like  = m->lnL_Vec[c];
-            likeI = m->lnLI_Vec[c];
-            if (lnScaler[c] < -200)
-            {
-                /* we are not going to be able to exponentiate the scaling factor */
-                if (likeI > 1E-70)
-                {
-                    /* forget about like; it is going to be insignificant compared to likeI */
-                    like = likeI;
-                }
-                else
-                {
-                    /* treat likeI as if 0.0, that is, ignore it completely */
-                }
-            }
-            else
-                like = like + (likeI / exp (lnScaler[c]));
-            
-            /* check against LIKE_EPSILON (values close to zero are problematic) */
-            if (like < LIKE_EPSILON)
-            {
-#   ifdef DEBUG_LIKELIHOOD
-                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-                (*lnL) = MRBFLT_NEG_MAX;
-                abortMove = YES;
-                return ERROR;
-            }
-            else
-            {
-                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
-            }
-        }
-    }
-    
-    return NO_ERROR;
-}
-#endif
-
-
-#if defined (SSE_ENABLED)
-/*------------------------------------------------------------------
-|
-|   Likelihood_Dimethyl_SSE: 4by4 nucleotide models with or without rate
-|       variation
-|
--------------------------------------------------------------------*/
-int Likelihood_Dimethyl_SSE (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
-{
-    int             c, k, hasPInvar;
-    MrBFlt          freq, bs[3], pInvar=0.0, like, likeI;
-    CLFlt           *lnScaler, *nSitesOfPat, *lnL_Vec, *lnLI_Vec;
-    __m128          *clPtr, **clP, *clInvar=NULL;
-    __m128          m1, mE, mM, mD, mFreq, mPInvar=_mm_set1_ps(0.0f), mLike;
-    ModelInfo       *m;
-    MrBFlt          alpha, beta, denom, *dimRates=NULL;
-
-    /* find model settings and pInvar, invar cond likes */
-    m = &modelSettings[division];
-    if (m->pInvar == NULL)
-        {
-        hasPInvar = NO;
-        }
-    else
-        {
-        hasPInvar = YES;
-        pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
-        mPInvar = _mm_set1_ps ((CLFlt)(pInvar));
-        clInvar = (__m128 *) (m->invCondLikes);
-        }
-
-    /* find conditional likelihood pointers */
-    clPtr = (__m128 *) (m->condLikes[m->condLikeIndex[chain][p->index]]);
-    clP = m->clP_SSE;
-    for (k=0; k<m->numRateCats; k++)
-        {
-        clP[k] = clPtr;
-        clPtr += m->numVecChars * m->numModelStates;
-        }
-    lnL_Vec  = m->lnL_Vec;
-    lnLI_Vec = m->lnLI_Vec;
-    
-    /* find base frequencies */
-    dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
-    alpha = dimRates[0];
-    beta = dimRates[1]; /*  dimRates[1]; */
-    denom = (alpha+beta) * (alpha+beta);
-
-    bs[0] = (beta*beta)/denom;
-    bs[1] = (2.0*alpha*beta)/denom;
-    bs[2] = (alpha*alpha)/denom;
-
-    mE = _mm_set1_ps ((CLFlt)(bs[0]));
-    mM = _mm_set1_ps ((CLFlt)(bs[1]));
-    mD = _mm_set1_ps ((CLFlt)(bs[2]));
-
-    /* find category frequencies */
-    if (hasPInvar == NO)
-        freq =  1.0 / m->numRateCats;
-    else
-        freq =  (1.0 - pInvar) / m->numRateCats;
-    mFreq = _mm_set1_ps ((CLFlt)(freq));
-
-    /* find tree scaler */
-    lnScaler = m->scalers[m->siteScalerIndex[chain]];
-
-    /* find nSitesOfPat */
-    nSitesOfPat = numSitesOfPat + (whichSitePats*numCompressedChars) + m->compCharStart;
-    
-    /* reset lnL */
-    *lnL = 0.0;
-
-    /* calculate variable likelihood */
-    for (c=0; c<m->numVecChars; c++)
-        {
-        mLike = _mm_setzero_ps ();
-        for (k=0; k<m->numRateCats; k++)
-            {
-            m1    = _mm_mul_ps (clP[k][0], mE);
-            mLike = _mm_add_ps (mLike, m1);
-            m1    = _mm_mul_ps (clP[k][1], mM);
-            mLike = _mm_add_ps (mLike, m1);
-            m1    = _mm_mul_ps (clP[k][2], mD);
-            mLike = _mm_add_ps (mLike, m1);
-            clP[k] += 3;
-            }
-        mLike = _mm_mul_ps (mLike, mFreq);
-        _mm_store_ps (lnL_Vec, mLike);
-        lnL_Vec += m->numFloatsPerVec;
-        }
-    
-    /* calculate invariable likelihood */
-    if (hasPInvar == YES)
-        {
-        for (c=0; c<m->numVecChars; c++)
-            {
-            mLike = _mm_mul_ps (clInvar[0], mE);
-            m1    = _mm_mul_ps (clInvar[1], mM);
-            mLike = _mm_add_ps (mLike, m1);
-            m1    = _mm_mul_ps (clInvar[2], mD);
-            mLike = _mm_add_ps (mLike, m1);
-            mLike = _mm_mul_ps (mLike, mPInvar);
-
-            _mm_store_ps (lnLI_Vec, mLike);
-            clInvar += 3;
-            lnLI_Vec += m->numFloatsPerVec;
-            }
-        }
-
-    /* accumulate results */
-    if (hasPInvar == NO)
-        {
-        for (c=0; c<m->numChars; c++)
-            {
-            like = m->lnL_Vec[c];
-            /* check against LIKE_EPSILON (values close to zero are problematic) */
-            if (like < LIKE_EPSILON)
-                {
-#   ifdef DEBUG_LIKELIHOOD
-                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-                (*lnL) = MRBFLT_NEG_MAX;
-                abortMove = YES;
-                return ERROR;
-                }
-            else    
-                {
-                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
-                }
-            }
-        }
-    else
-        {
-        /* has invariable category */
-        for (c=0; c<m->numChars; c++)
-            {
-            like  = m->lnL_Vec[c];
-            likeI = m->lnLI_Vec[c];
-            if (lnScaler[c] < -200)
-                {
-                /* we are not going to be able to exponentiate the scaling factor */
-                if (likeI > 1E-70)
-                    {
-                    /* forget about like; it is going to be insignificant compared to likeI */
-                    like = likeI;
-                    }
-                else
-                    {
-                    /* treat likeI as if 0.0, that is, ignore it completely */
-                    }
-                }
-            else
-                like = like + (likeI / exp (lnScaler[c]));
-
-            /* check against LIKE_EPSILON (values close to zero are problematic) */
-            if (like < LIKE_EPSILON)
-                {
-#   ifdef DEBUG_LIKELIHOOD
-                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
-#   endif
-                (*lnL) = MRBFLT_NEG_MAX;
-                abortMove = YES;
-                return ERROR;
-                }
-            else    
-                {
-                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
-                }
-            }
-        }
-
-    return NO_ERROR;
-}
-#endif
-
-
 
 
 /*------------------------------------------------------------------
@@ -9861,19 +7874,6 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
     
     m = &modelSettings[d];
     tree = GetTree(m->brlens, chain, state[chain]);
-
-    /* 
-    MrBayesPrint("\n");
-    for (int j=0; j<tree->nIntNodes; j++)
-        {
-        p=tree->intDownPass[j];
-        MrBayesPrint("condLikes at node %d before recalc: \n", p->index);
-        for (int i=0; i<m->condLikeLength; i++)
-            MrBayesPrint("%3.3f  ", m->condLikes[m->condLikeIndex[chain][p->index]][i]);
-        MrBayesPrint("\n");
-        }
-    */
-
     if (m->upDateCijk == YES)
         {
         if (UpDateCijk(d, chain) == ERROR)
@@ -9940,15 +7940,7 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
                         }
                     else
                         {
-                        /*
-                        MrBayesPrint("fresh condLikes at node %d: \n", p->index);
-                        for (int i=0; i<m->condLikeLength; i++)
-                                MrBayesPrint("%3.3f  ", m->condLikes[m->condLikeIndex[chain][p->index]][i]);
-                        MrBayesPrint("\n");
-                        */
                         TIME(m->CondLikeDown (p, d, chain),CPUCondLikeDown);
-                        if (p->length > 1) 
-                            MrBayesPrint("leng prob\n");
                         }
                     }
                 else
@@ -9985,47 +7977,10 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
                     }
                 }
             }
+        }
 
-        /* 
-        if (chain == 0)
-            {
-            MrBayesPrint("Chain 0 TiProbs: \n");
-            for (int i=0; i<tree->nNodes; i++)
-                {
-                MrBayesPrint("Node %d:  ", i);
-                for (int j=0; j<m->tiProbLength; j++)
-                    MrBayesPrint("%0.9f  " , m->tiProbs[m->tiProbsIndex[0][i]][j]);
-                MrBayesPrint("\n");
-                }
-            MrBayesPrint("\n");
-
-            MrBayesPrint("Chain 0 CondLikes: \n");
-            for (int i=0; i<tree->nNodes; i++)
-                {
-                MrBayesPrint("Node %d:  ", i);
-                for (int j=0; j<m->condLikeLength; j++)
-                    MrBayesPrint("%3.3f  " , m->condLikes[m->condLikeIndex[0][i]][j]);
-                MrBayesPrint("\n");
-                }
-            MrBayesPrint("\n");
-            
-
-            MrBayesPrint("Chain 0 CondLikes: \n");
-            for (int i=0; i<tree->nNodes; i++)
-                {
-                MrBayesPrint("Node %d:  ", i);
-                for (int j=0; j<m->condLikeLength; j++)
-                    MrBayesPrint("%3.3f  " , m->condLikes[m->condLikeIndex[0][i]][j]);
-                MrBayesPrint("\n");
-                }
-            MrBayesPrint("\n");
-            }
-        */
-
-        /* call likelihood function to summarize result */
-        TIME(m->Likelihood (tree->root->left, d, chain, lnL, (chainId[chain] % chainParams.numChains)),CPULilklihood);
-        } 
-
+    /* call likelihood function to summarize result */
+    TIME(m->Likelihood (tree->root->left, d, chain, lnL, (chainId[chain] % chainParams.numChains)),CPULilklihood);
     return ;
 }
 
@@ -11656,11 +9611,6 @@ int TiProbs_Gen (TreeNode *p, int division, int chain)
             }
         }
 
-//    for (index=0; index<m->tiProbLength; index++)
-//        if (tiP[index] > 1.0 || tiP[index] < 0.0)
-//            MrBayesPrint("bad ti prob... \n");
-//
-
 #   if 0
     printf ("v = %lf (%d)\n", t, p->index);
     for (i=index=0; i<n; i++)
@@ -12067,208 +10017,6 @@ int TiProbs_JukesCantor (TreeNode *p, int division, int chain)
         }
 
     return NO_ERROR;
-}
-
-
-
-/*-----------------------------------------------------------------
-|
-|   TiProbs_Hky: update transition probabilities for 4by4
-|       nucleotide model with nst == 2 (K80/HKY85)
-|       with or without rate variation
-|
-------------------------------------------------------------------*/
-int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
-{
-    int         i, j, k, n, s, index;
-    MrBFlt      t, pis[3], alpha, beta, *dimRates=NULL, *ptr,  *eigenValues, *cijk, EigValexp[64], sum,
-                *catRate, baseRate, theRate, length, denom;
-    MrBFlt      rER;
-    CLFlt       *tiP;
-    ModelInfo   *m;
-
-    CLFlt *rECL; 
-    CLFlt readErrProbs[9];
-
- 
-    /* MrBFlt      a,b, a2, b2, ab, e2, e1; */
-    /*   MrBFlt      scale; */
-
-    m = &modelSettings[division];
-    n = m->numModelStates;
-
-    /* find transition probabilities */
-    tiP = m->tiProbs[m->tiProbsIndex[chain][p->index]];
-
-    /* get revmat rates */
-    dimRates =  GetParamVals (m->dimethylRate, chain, state[chain]);
-    alpha = dimRates[0];
-    beta = dimRates[1];
-
-    /* get base rate */
-    baseRate = GetRate (division, chain);
-    denom = ((alpha + beta) * (alpha + beta));
-    pis[0] = beta*beta / denom;
-    pis[1] = 2.0*alpha*beta / denom; 
-    pis[2] = alpha*alpha / denom;
-
-    /* compensate for invariable sites if appropriate */
-    if (m->pInvar != NULL)
-        baseRate /= (1.0 - (*GetParamVals(m->pInvar, chain, state[chain])));
-    
-    /* get category rates */
-    theRate = 1.0;
-    if (m->shape != NULL)
-        catRate = GetParamSubVals (m->shape, chain, state[chain]);
-    else if (m->mixtureRates != NULL)
-        catRate = GetParamSubVals (m->mixtureRates, chain, state[chain]);
-    else
-        catRate = &theRate;
-
-    /* get eigenvalues and cijk pointers */
-    eigenValues = m->cijks[m->cijkIndex[chain]];
-    cijk        = eigenValues + (2 * n);
-
-    /* find length */
-    if (m->cppEvents != NULL)
-        {
-        length = GetParamSubVals (m->cppEvents, chain, state[chain])[p->index];
-        }
-    else if (m->tk02BranchRates != NULL)
-        {
-        length = GetParamSubVals (m->tk02BranchRates, chain, state[chain])[p->index];
-        }
-    else if (m->wnBranchRates != NULL)
-        {
-        length = GetParamSubVals (m->wnBranchRates, chain, state[chain])[p->index];
-        }
-    else if (m->ilnBranchRates != NULL)
-        {
-        length = GetParamSubVals (m->ilnBranchRates, chain, state[chain])[p->index];
-        }
-    else if (m->igrBranchRates != NULL)
-        {
-        length = GetParamSubVals (m->igrBranchRates, chain, state[chain])[p->index];
-        }
-    else if (m->mixedBrchRates != NULL)
-        {
-        length = GetParamSubVals (m->mixedBrchRates, chain, state[chain])[p->index];
-        }
-    else
-        length = p->length;
-
-    /* numerical errors will ensue if we allow very large or very small branch lengths,
-       which might occur in relaxed clock models */
-    /*  
-    scale = 2*alpha*beta * (1+beta+alpha); 
-
-    a = alpha / (alpha + beta) ;
-    b = beta / (alpha + beta) ;
-    a2 = a * a;
-    ab = a * b;
-    b2 = b * b;
-    */
-
-    /* fill in values */
-    for (k=index=0; k<m->numRateCats; k++)
-        {
-        t =  length * baseRate * catRate[k] * 2.0;  /*  correction factor of 2 since 2 sites per site  */
-
-        /*
-        e1 = exp(-1.0*(a+b) * t);
-        e2 = exp(-2.0*(a+b) * t);
-        */
-
-        if (t < TIME_MIN)
-            {
-            /* Fill in identity matrix */
-            for (i=0; i<n; i++)
-                {
-                for (j=0; j<n; j++)
-                    {
-                    if (i == j)
-                        tiP[index++] = 1.0;
-                    else
-                        tiP[index++] = 0.0;
-                    }
-                }
-            }
-        else if (t > TIME_MAX)
-            {
-            /* Fill in stationary matrix */
-            for (i=0; i<n; i++)
-                for (j=0; j<n; j++)
-                    tiP[index++] = (CLFlt) pis[j];
-            }
-        else
-            {
-            /* We actually need to do some work... */
-            for (s=0; s<n; s++)
-                EigValexp[s] =  exp(eigenValues[s] * t);
-
-            ptr = cijk;
-            for (i=0; i<n; i++)
-                {
-                for (j=0; j<n; j++)
-                    {
-                    sum = 0.0;
-                    for (s=0; s<n; s++)
-                        sum += (*ptr++) * EigValexp[s];
-                    tiP[index++] = (CLFlt) ((sum < 0.0) ? 0.0 : sum);
-                    }
-                }
-
-            }
-        }
-
-    //for (index=0; indexm->tiProbLength; index++)
-    //    if (tiP[index] > 1.0 || tiP[index] < 0.0)
-    //        MrBayesPrint("bad ti prob...! \n");
- 
-    // if left/right node are tips, calc probabilities 
-    // by summing over the read error probabilities  
-    //
-    if (p->index < numLocalTaxa)
-        {
-        rER=*GetParamVals (m->readErrRate, chain, state[chain]);
-        if (rER > 0) 
-            {
-            for (i=index=0; i<3; i++)
-                {
-                for (j=0; j<3; j++)
-                   {
-                   if (j==i) 
-                       readErrProbs[index++]=(1 - 2.0*rER);
-                   else 
-                       readErrProbs[index++]=rER;
-                   }
-               }
-
-            rECL=m->readErrCls[m->readErrClIndex[chain][p->index]];
-            /*  reset...  */
-            for (i=0;i<m->readErrClLength;i++)
-                    rECL[i]=0.0;
-
-            int tipIndex;
-            for (k=index=tipIndex=0; k<m->numRateCats; k++)
-                {
-                for (i=0; i<n; i++) 
-                    { 
-                    for (j=0; j<n; j++) 
-                        {
-                        /*  rECL[index] = P(j -> i) = \sum_x P(x, i) P(x->j) */
-                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+0]*readErrProbs[i+0]);
-                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+3]*readErrProbs[i+3]);
-                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+6]*readErrProbs[i+6]);
-                        index++;
-                        }
-                    }
-                tipIndex+=9;
-                }
-            }
-        }
-                                                                           
-    return (NO_ERROR);
 }
 
 
@@ -12946,7 +10694,6 @@ int UpDateCijk (int whichPart, int whichChain)
                     if (SetProteinQMatrix (q[0], n, whichChain, whichPart, 1.0) == ERROR)
                         goto errorExit;
                     }
-                    
                 isComplex = GetEigens (n, q[0], eigenValues, eigvalsImag, eigvecs, inverseEigvecs, Ceigvecs, CinverseEigvecs);
 #   if defined (BEAGLE_ENABLED)
                 if (isComplex == YES)
@@ -13132,4 +10879,2191 @@ int UpDateCijk (int whichPart, int whichChain)
 
         return ERROR;
 }
+
+/* * Dimethyl Functions Below * */
+
+/*----------------------------------------------------------------
+|
+|   CondLikeDown_Dimethyl: 3by3 dimethyl model with or without rate
+|       variation
+|
+-----------------------------------------------------------------*/
+int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
+{
+    int             c, h, i, j, k, shortCut, *lState=NULL, *rState=NULL;
+    CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
+    ModelInfo       *m;
+    double          rER;
+
+    m = &modelSettings[division];
+
+    /* flip space so that we do not overwrite old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+    
+    /* find conditional likelihood pointers */
+    clL = m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
+     
+    /* find transition probabilities */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+
+    rER=*GetParamVals (m->readErrRate, chain, state[chain]);
+
+    /* find likelihoods of site patterns for left branch if terminal */
+    shortCut = 0;
+#   if !defined (DEBUG_NOSHORTCUTS)
+    if (p->left->left == NULL && m->isPartAmbig[p->left->index] == NO)
+        {
+        shortCut |= 1;
+        lState = m->termState[p->left->index];
+        tiPL = pL;
+
+        if (rER > 0) 
+            tiPL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
+
+        for (k=j=0; k<m->numRateCats; k++)
+            {
+            for (i=0; i<3; i++)
+                {
+                preLikeL[j++] = tiPL[0];
+                preLikeL[j++] = tiPL[3];
+                preLikeL[j++] = tiPL[6];
+                tiPL++;
+                }
+            /* for ambiguous */
+            for (i=0; i<3; i++)
+                preLikeL[j++] = 1.0;
+            tiPL += 6;
+            }
+        }
+
+    /* find likelihoods of site patterns for right branch if terminal */
+    if (p->right->left == NULL && m->isPartAmbig[p->right->index] == NO)
+        {
+        shortCut |= 2;
+        rState = m->termState[p->right->index];
+
+        if (rER > 0) 
+            tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
+
+        tiPR = pR;
+
+        if (rER > 0) 
+            tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
+
+        for (k=j=0; k<m->numRateCats; k++)
+            {
+            for (i=0; i<3; i++)
+                {
+                preLikeR[j++] = tiPR[0];
+                preLikeR[j++] = tiPR[3];
+                preLikeR[j++] = tiPR[6];
+                tiPR++;
+                }
+            /* for ambiguous */
+            for (i=0; i<3; i++)
+                preLikeR[j++] = 1.0;
+            tiPR += 6;
+            }
+        }
+#   endif
+
+    switch (shortCut)
+        {
+        case 0:
+            tiPL = pL;
+            tiPR = pR;
+            for (k=h=0; k<m->numRateCats; k++)
+                {
+                for (c=0; c<m->numChars; c++)
+                    {
+                    clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
+                                *(tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2]);
+                    clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
+                                *(tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2]);
+                    clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
+                                *(tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2]);
+                    clL += 3;
+                    clR += 3;
+                    }
+                tiPL += 9;
+                tiPR += 9;
+                }
+            break;
+        case 1:
+            tiPR = pR;
+            for (k=h=0; k<m->numRateCats; k++)
+                {
+                for (c=0; c<m->numChars; c++)
+                    {
+                    i = lState[c] + k*12;
+                    clP[h++] =   preLikeL[i++]
+                                *(tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2]);
+                    clP[h++] =   preLikeL[i++]
+                                *(tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2]);
+                    clP[h++] =   preLikeL[i++]
+                                *(tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2]);
+                    clR += 3;
+                    }
+                tiPR += 9;
+                }
+            break;
+        case 2:
+            tiPL = pL;
+            for (k=h=0; k<m->numRateCats; k++)
+                {
+                for (c=0; c<m->numChars; c++)
+                    {
+                    i = rState[c] + k*12;
+
+                    clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
+                                *preLikeR[i++];
+
+                    clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
+                                *preLikeR[i++];
+
+                    clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
+                                *preLikeR[i++];
+                    clL += 3;
+                    }
+                tiPL += 9;
+                }
+            break;
+        case 3:
+            for (k=h=0; k<m->numRateCats; k++)
+                {
+                for (c=0; c<m->numChars; c++)
+                    {
+                    i = j = k*12;
+                    i += lState[c];
+                    j += rState[c];
+                    clP[h++] =   preLikeL[i++]*preLikeR[j++];
+                    clP[h++] =   preLikeL[i++]*preLikeR[j++];
+                    clP[h++] =   preLikeL[i++]*preLikeR[j++];
+                    }
+                }
+        }
+
+    /*
+    for (int i=0; i<m->condLikeLength; i++)
+        {
+        if (clP[i] > 1.0 || clP[i] < 0.0)
+            MrBayesPrint("well here we are \n");
+        }
+    */
+
+    return NO_ERROR;
+}
+
+#if defined (FMA_ENABLED)
+/*----------------------------------------------------------------
+ |
+ |   CondLikeDown_Dimethyl_FMA: Dimethyl nucleotide model with or without rate
+ |       variation, using AVX + FMA instructions
+ |
+ -----------------------------------------------------------------*/
+int CondLikeDown_Dimethyl_FMA (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           *pL, *pR, *tiPL, *tiPR;
+    __m256          *clL, *clR, *clP;
+    __m256          m1, m2, m3, m4;
+    ModelInfo       *m;
+    
+    m = &modelSettings[division];
+    
+    /* flip state of node so that we are not overwriting old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+    
+    /* find conditional likelihood pointers */
+    clL = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
+    
+    /* find transition probabilities */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+    
+    tiPL = pL;
+    tiPR = pR;
+    for (k=0; k<m->numRateCats; k++)
+    {
+        for (c=0; c<m->numVecChars; c++)
+        {
+            m1 = _mm256_broadcast_ss (&tiPL[EE]);
+            m2 = _mm256_broadcast_ss (&tiPR[EE]);
+            m3 = _mm256_mul_ps (m1, clL[0]);
+            m4 = _mm256_mul_ps (m2, clR[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[EM]);
+            m2 = _mm256_broadcast_ss (&tiPR[EM]);
+            m3 = _mm256_fmadd_ps (m1, clL[1], m3);
+            m4 = _mm256_fmadd_ps (m2, clR[1], m4);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[ED]);
+            m2 = _mm256_broadcast_ss (&tiPR[ED]);
+            m3 = _mm256_fmadd_ps (m1, clL[2], m3);
+            m4 = _mm256_fmadd_ps (m2, clR[2], m4);
+            
+            *clP++ = _mm256_mul_ps (m3, m4);
+
+            m1 = _mm256_broadcast_ss (&tiPL[ME]);
+            m2 = _mm256_broadcast_ss (&tiPR[ME]);
+            m3 = _mm256_mul_ps (m1, clL[0]);
+            m4 = _mm256_mul_ps (m2, clR[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[MM]);
+            m2 = _mm256_broadcast_ss (&tiPR[MM]);
+            m3 = _mm256_fmadd_ps (m1, clL[1], m3);
+            m4 = _mm256_fmadd_ps (m2, clR[1], m4);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[MD]);
+            m2 = _mm256_broadcast_ss (&tiPR[MD]);
+            m3 = _mm256_fmadd_ps (m1, clL[2], m3);
+            m4 = _mm256_fmadd_ps (m2, clR[2], m4);
+            
+            *clP++ = _mm256_mul_ps (m3, m4);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DE]);
+            m2 = _mm256_broadcast_ss (&tiPR[DE]);
+            m3 = _mm256_mul_ps (m1, clL[0]);
+            m4 = _mm256_mul_ps (m2, clR[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DM]);
+            m2 = _mm256_broadcast_ss (&tiPR[DM]);
+            m3 = _mm256_fmadd_ps (m1, clL[1], m3);
+            m4 = _mm256_fmadd_ps (m2, clR[1], m4);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DD]);
+            m2 = _mm256_broadcast_ss (&tiPR[DD]);
+            m3 = _mm256_fmadd_ps (m1, clL[2], m3);
+            m4 = _mm256_fmadd_ps (m2, clR[2], m4);
+            
+            *clP++ = _mm256_mul_ps (m3, m4);
+
+            clL += 3;
+            clR += 3;
+        }
+        tiPL += 9;
+        tiPR += 9;
+    }
+    
+    return NO_ERROR;
+    
+}
+#endif
+
+
+#if defined (AVX_ENABLED)
+/*----------------------------------------------------------------
+ |
+ |   CondLikeDown_Dimethyl_AVX: Dimethyl nucleotide model with or without rate
+ |       variation, using AVX instructions
+ |
+ -----------------------------------------------------------------*/
+int CondLikeDown_Dimethyl_AVX (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           *pL, *pR, *tiPL, *tiPR;
+    __m256          *clL, *clR, *clP;
+    __m256          m1, m2, m3, m4, m5, m6;
+    ModelInfo       *m;
+    
+    m = &modelSettings[division];
+    
+    /* flip state of node so that we are not overwriting old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+    
+    /* find conditional likelihood pointers */
+    clL = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
+    
+    /* find transition probabilities */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+    
+    tiPL = pL;
+    tiPR = pR;
+    for (k=0; k<m->numRateCats; k++)
+    {
+        for (c=0; c<m->numVecChars; c++)
+        {
+            m1 = _mm256_broadcast_ss (&tiPL[EE]);
+            m2 = _mm256_broadcast_ss (&tiPR[EE]);
+            m5 = _mm256_mul_ps (m1, clL[0]);
+            m6 = _mm256_mul_ps (m2, clR[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[EM]);
+            m2 = _mm256_broadcast_ss (&tiPR[EM]);
+            m3 = _mm256_mul_ps (m1, clL[1]);
+            m4 = _mm256_mul_ps (m2, clR[1]);
+            m5 = _mm256_add_ps (m3, m5);
+            m6 = _mm256_add_ps (m4, m6);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[ED]);
+            m2 = _mm256_broadcast_ss (&tiPR[ED]);
+            m3 = _mm256_mul_ps (m1, clL[2]);
+            m4 = _mm256_mul_ps (m2, clR[2]);
+            m5 = _mm256_add_ps (m3, m5);
+            m6 = _mm256_add_ps (m4, m6);
+            
+            *clP++ = _mm256_mul_ps (m5, m6);
+
+            m1 = _mm256_broadcast_ss (&tiPL[ME]);
+            m2 = _mm256_broadcast_ss (&tiPR[ME]);
+            m5 = _mm256_mul_ps (m1, clL[0]);
+            m6 = _mm256_mul_ps (m2, clR[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[MM]);
+            m2 = _mm256_broadcast_ss (&tiPR[MM]);
+            m3 = _mm256_mul_ps (m1, clL[1]);
+            m4 = _mm256_mul_ps (m2, clR[1]);
+            m5 = _mm256_add_ps (m3, m5);
+            m6 = _mm256_add_ps (m4, m6);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[MD]);
+            m2 = _mm256_broadcast_ss (&tiPR[MD]);
+            m3 = _mm256_mul_ps (m1, clL[2]);
+            m4 = _mm256_mul_ps (m2, clR[2]);
+            m5 = _mm256_add_ps (m3, m5);
+            m6 = _mm256_add_ps (m4, m6);
+            
+            *clP++ = _mm256_mul_ps (m5, m6);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DE]);
+            m2 = _mm256_broadcast_ss (&tiPR[DE]);
+            m5 = _mm256_mul_ps (m1, clL[0]);
+            m6 = _mm256_mul_ps (m2, clR[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DM]);
+            m2 = _mm256_broadcast_ss (&tiPR[DM]);
+            m3 = _mm256_mul_ps (m1, clL[1]);
+            m4 = _mm256_mul_ps (m2, clR[1]);
+            m5 = _mm256_add_ps (m3, m5);
+            m6 = _mm256_add_ps (m4, m6);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DD]);
+            m2 = _mm256_broadcast_ss (&tiPR[DD]);
+            m3 = _mm256_mul_ps (m1, clL[2]);
+            m4 = _mm256_mul_ps (m2, clR[2]);
+            m5 = _mm256_add_ps (m3, m5);
+            m6 = _mm256_add_ps (m4, m6);
+           
+            *clP++ = _mm256_mul_ps (m5, m6);
+
+            clL += 3;
+            clR += 3;
+        }
+        tiPL += 9;
+        tiPR += 9;
+    }
+    
+    return NO_ERROR;
+    
+}
+#endif
+
+
+#if defined (SSE_ENABLED)
+/*----------------------------------------------------------------
+|
+|   CondLikeDown_Dimethyl_SSE: Dimethyl nucleotide model with or without rate
+|       variation, using SSE instructions
+|
+-----------------------------------------------------------------*/
+int CondLikeDown_Dimethyl_SSE (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           *pL, *pR, *tiPL, *tiPR;
+    __m128          *clL, *clR, *clP;
+    __m128          m1, m2, m3, m4, m5, m6;
+    ModelInfo       *m;
+    
+    m = &modelSettings[division];
+
+    /* flip state of node so that we are not overwriting old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+    
+    /* find conditional likelihood pointers */
+    clL = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
+    
+    /* find transition probabilities */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+
+    tiPL = pL;
+    tiPR = pR;
+    for (k=0; k<m->numRateCats; k++)
+        {
+        for (c=0; c<m->numVecChars; c++)
+            {
+            m1 = _mm_load1_ps (&tiPL[EE]);
+            m2 = _mm_load1_ps (&tiPR[EE]);
+            m5 = _mm_mul_ps (m1, clL[0]);
+            m6 = _mm_mul_ps (m2, clR[0]);
+
+            m1 = _mm_load1_ps (&tiPL[EM]);
+            m2 = _mm_load1_ps (&tiPR[EM]);
+            m3 = _mm_mul_ps (m1, clL[1]);
+            m4 = _mm_mul_ps (m2, clR[1]);
+            m5 = _mm_add_ps (m3, m5);
+            m6 = _mm_add_ps (m4, m6);
+
+            m1 = _mm_load1_ps (&tiPL[ED]);
+            m2 = _mm_load1_ps (&tiPR[ED]);
+            m3 = _mm_mul_ps (m1, clL[2]);
+            m4 = _mm_mul_ps (m2, clR[2]);
+            m5 = _mm_add_ps (m3, m5);
+            m6 = _mm_add_ps (m4, m6);
+
+            *clP++ = _mm_mul_ps (m5, m6);
+
+            m1 = _mm_load1_ps (&tiPL[ME]);
+            m2 = _mm_load1_ps (&tiPR[ME]);
+            m5 = _mm_mul_ps (m1, clL[0]);
+            m6 = _mm_mul_ps (m2, clR[0]);
+
+            m1 = _mm_load1_ps (&tiPL[MM]);
+            m2 = _mm_load1_ps (&tiPR[MM]);
+            m3 = _mm_mul_ps (m1, clL[1]);
+            m4 = _mm_mul_ps (m2, clR[1]);
+            m5 = _mm_add_ps (m3, m5);
+            m6 = _mm_add_ps (m4, m6);
+
+            m1 = _mm_load1_ps (&tiPL[MD]);
+            m2 = _mm_load1_ps (&tiPR[MD]);
+            m3 = _mm_mul_ps (m1, clL[2]);
+            m4 = _mm_mul_ps (m2, clR[2]);
+            m5 = _mm_add_ps (m3, m5);
+            m6 = _mm_add_ps (m4, m6);
+
+            *clP++ = _mm_mul_ps (m5, m6);
+
+            m1 = _mm_load1_ps (&tiPL[DE]);
+            m2 = _mm_load1_ps (&tiPR[DE]);
+            m5 = _mm_mul_ps (m1, clL[0]);
+            m6 = _mm_mul_ps (m2, clR[0]);
+
+            m1 = _mm_load1_ps (&tiPL[DM]);
+            m2 = _mm_load1_ps (&tiPR[DM]);
+            m3 = _mm_mul_ps (m1, clL[1]);
+            m4 = _mm_mul_ps (m2, clR[1]);
+            m5 = _mm_add_ps (m3, m5);
+            m6 = _mm_add_ps (m4, m6);
+
+            m1 = _mm_load1_ps (&tiPL[DD]);
+            m2 = _mm_load1_ps (&tiPR[DD]);
+            m3 = _mm_mul_ps (m1, clL[2]);
+            m4 = _mm_mul_ps (m2, clR[2]);
+            m5 = _mm_add_ps (m3, m5);
+            m6 = _mm_add_ps (m4, m6);
+
+            *clP++ = _mm_mul_ps (m5, m6);
+
+            clL += 3;
+            clR += 3;
+            }
+        tiPL += 9;
+        tiPR += 9;
+        }
+
+    return NO_ERROR;
+    
+}
+#endif
+
+
+#if defined (FMA_ENABLED)
+/*----------------------------------------------------------------
+ |
+ |   CondLikeRoot_Dimethyl_FMA: 4by4 nucleotide model with or without rate
+ |       variation using AVX + FMA instructions
+ |
+ -----------------------------------------------------------------*/
+int CondLikeRoot_Dimethyl_FMA (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           *pL, *pR, *pA, *tiPL, *tiPR, *tiPA;
+    __m256          *clL, *clR, *clP, *clA;
+    __m256          m1, m2, m3, m4, m5, m6;
+    ModelInfo       *m;
+    
+    m = &modelSettings[division];
+    
+    /* flip state of node so that we are not overwriting old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+    
+    /* find conditional likelihood pointers */
+    clL = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
+    clA = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
+    
+    /* find transition probabilities */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
+    
+    tiPL = pL;
+    tiPR = pR;
+    tiPA = pA;
+    for (k=0; k<m->numRateCats; k++)
+    {
+        for (c=0; c<m->numVecChars; c++)
+        {
+            m1 = _mm256_broadcast_ss (&tiPL[EE]);
+            m2 = _mm256_broadcast_ss (&tiPR[EE]);
+            m3 = _mm256_broadcast_ss (&tiPA[EE]);
+            m4 = _mm256_mul_ps (m1, clL[0]);
+            m5 = _mm256_mul_ps (m2, clR[0]);
+            m6 = _mm256_mul_ps (m3, clA[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[EM]);
+            m2 = _mm256_broadcast_ss (&tiPR[EM]);
+            m3 = _mm256_broadcast_ss (&tiPA[EM]);
+            m4 = _mm256_fmadd_ps (m1, clL[1], m4);
+            m5 = _mm256_fmadd_ps (m2, clR[1], m5);
+            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[ED]);
+            m2 = _mm256_broadcast_ss (&tiPR[ED]);
+            m3 = _mm256_broadcast_ss (&tiPA[ED]);
+            m4 = _mm256_fmadd_ps (m1, clL[2], m4);
+            m5 = _mm256_fmadd_ps (m2, clR[2], m5);
+            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
+            
+            m4 = _mm256_mul_ps (m4, m5);
+            *clP++ = _mm256_mul_ps (m4, m6);
+           
+            m1 = _mm256_broadcast_ss (&tiPL[ME]);
+            m2 = _mm256_broadcast_ss (&tiPR[ME]);
+            m3 = _mm256_broadcast_ss (&tiPA[ME]);
+            m4 = _mm256_mul_ps (m1, clL[0]);
+            m5 = _mm256_mul_ps (m2, clR[0]);
+            m6 = _mm256_mul_ps (m3, clA[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[MM]);
+            m2 = _mm256_broadcast_ss (&tiPR[MM]);
+            m3 = _mm256_broadcast_ss (&tiPA[MM]);
+            m4 = _mm256_fmadd_ps (m1, clL[1], m4);
+            m5 = _mm256_fmadd_ps (m2, clR[1], m5);
+            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[MD]);
+            m2 = _mm256_broadcast_ss (&tiPR[MD]);
+            m3 = _mm256_broadcast_ss (&tiPA[MD]);
+            m4 = _mm256_fmadd_ps (m1, clL[2], m4);
+            m5 = _mm256_fmadd_ps (m2, clR[2], m5);
+            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
+
+            m4 = _mm256_mul_ps (m4, m5);
+            *clP++ = _mm256_mul_ps (m4, m6);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DE]);
+            m2 = _mm256_broadcast_ss (&tiPR[DE]);
+            m3 = _mm256_broadcast_ss (&tiPA[DE]);
+            m4 = _mm256_mul_ps (m1, clL[0]);
+            m5 = _mm256_mul_ps (m2, clR[0]);
+            m6 = _mm256_mul_ps (m3, clA[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DM]);
+            m2 = _mm256_broadcast_ss (&tiPR[DM]);
+            m3 = _mm256_broadcast_ss (&tiPA[DM]);
+            m4 = _mm256_fmadd_ps (m1, clL[1], m4);
+            m5 = _mm256_fmadd_ps (m2, clR[1], m5);
+            m6 = _mm256_fmadd_ps (m3, clA[1], m6);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DD]);
+            m2 = _mm256_broadcast_ss (&tiPR[DD]);
+            m3 = _mm256_broadcast_ss (&tiPA[DD]);
+            m4 = _mm256_fmadd_ps (m1, clL[2], m4);
+            m5 = _mm256_fmadd_ps (m2, clR[2], m5);
+            m6 = _mm256_fmadd_ps (m3, clA[2], m6);
+            
+            m4 = _mm256_mul_ps (m4, m5);
+            *clP++ = _mm256_mul_ps (m4, m6);
+            
+
+            clL += 3;
+            clR += 3;
+            clA += 3;
+        }
+        tiPL += 9;
+        tiPR += 9;
+        tiPA += 9;
+    }
+    
+    return NO_ERROR;
+}
+#endif
+
+
+#if defined (AVX_ENABLED)
+/*----------------------------------------------------------------
+ |
+ |   CondLikeRoot_Dimethyl_AVX: 4by4 nucleotide model with or without rate
+ |       variation using AVX instructions
+ |
+ -----------------------------------------------------------------*/
+int CondLikeRoot_Dimethyl_AVX (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           *pL, *pR, *pA, *tiPL, *tiPR, *tiPA;
+    __m256          *clL, *clR, *clP, *clA;
+    __m256          m1, m2, m3, m4, m5, m6, m7, m8, m9;
+    ModelInfo       *m;
+    
+    m = &modelSettings[division];
+    
+    /* flip state of node so that we are not overwriting old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+    
+    /* find conditional likelihood pointers */
+    clL = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
+    clA = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
+    
+    /* find transition probabilities */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
+    
+    tiPL = pL;
+    tiPR = pR;
+    tiPA = pA;
+    for (k=0; k<m->numRateCats; k++)
+    {
+        for (c=0; c<m->numVecChars; c++)
+        {
+            m1 = _mm256_broadcast_ss (&tiPL[EE]);
+            m2 = _mm256_broadcast_ss (&tiPR[EE]);
+            m3 = _mm256_broadcast_ss (&tiPA[EE]);
+            m7 = _mm256_mul_ps (m1, clL[0]);
+            m8 = _mm256_mul_ps (m2, clR[0]);
+            m9 = _mm256_mul_ps (m3, clA[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[EM]);
+            m2 = _mm256_broadcast_ss (&tiPR[EM]);
+            m3 = _mm256_broadcast_ss (&tiPA[EM]);
+            m4 = _mm256_mul_ps (m1, clL[1]);
+            m5 = _mm256_mul_ps (m2, clR[1]);
+            m6 = _mm256_mul_ps (m3, clA[1]);
+            m7 = _mm256_add_ps (m4, m7);
+            m8 = _mm256_add_ps (m5, m8);
+            m9 = _mm256_add_ps (m6, m9);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[ED]);
+            m2 = _mm256_broadcast_ss (&tiPR[ED]);
+            m3 = _mm256_broadcast_ss (&tiPA[ED]);
+            m4 = _mm256_mul_ps (m1, clL[2]);
+            m5 = _mm256_mul_ps (m2, clR[2]);
+            m6 = _mm256_mul_ps (m3, clA[2]);
+            m7 = _mm256_add_ps (m4, m7);
+            m8 = _mm256_add_ps (m5, m8);
+            m9 = _mm256_add_ps (m6, m9);
+                       
+            m7 = _mm256_mul_ps (m7, m8);
+            *clP++ = _mm256_mul_ps (m7, m9);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[ME]);
+            m2 = _mm256_broadcast_ss (&tiPR[ME]);
+            m3 = _mm256_broadcast_ss (&tiPA[ME]);
+            m7 = _mm256_mul_ps (m1, clL[0]);
+            m8 = _mm256_mul_ps (m2, clR[0]);
+            m9 = _mm256_mul_ps (m3, clA[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[MM]);
+            m2 = _mm256_broadcast_ss (&tiPR[MM]);
+            m3 = _mm256_broadcast_ss (&tiPA[MM]);
+            m4 = _mm256_mul_ps (m1, clL[1]);
+            m5 = _mm256_mul_ps (m2, clR[1]);
+            m6 = _mm256_mul_ps (m3, clA[1]);
+            m7 = _mm256_add_ps (m4, m7);
+            m8 = _mm256_add_ps (m5, m8);
+            m9 = _mm256_add_ps (m6, m9);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[MD]);
+            m2 = _mm256_broadcast_ss (&tiPR[MD]);
+            m3 = _mm256_broadcast_ss (&tiPA[MD]);
+            m4 = _mm256_mul_ps (m1, clL[2]);
+            m5 = _mm256_mul_ps (m2, clR[2]);
+            m6 = _mm256_mul_ps (m3, clA[2]);
+            m7 = _mm256_add_ps (m4, m7);
+            m8 = _mm256_add_ps (m5, m8);
+            m9 = _mm256_add_ps (m6, m9);
+            
+            m7 = _mm256_mul_ps (m7, m8);
+            *clP++ = _mm256_mul_ps (m7, m9);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DE]);
+            m2 = _mm256_broadcast_ss (&tiPR[DE]);
+            m3 = _mm256_broadcast_ss (&tiPA[DE]);
+            m7 = _mm256_mul_ps (m1, clL[0]);
+            m8 = _mm256_mul_ps (m2, clR[0]);
+            m9 = _mm256_mul_ps (m3, clA[0]);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DM]);
+            m2 = _mm256_broadcast_ss (&tiPR[DM]);
+            m3 = _mm256_broadcast_ss (&tiPA[DM]);
+            m4 = _mm256_mul_ps (m1, clL[1]);
+            m5 = _mm256_mul_ps (m2, clR[1]);
+            m6 = _mm256_mul_ps (m3, clA[1]);
+            m7 = _mm256_add_ps (m4, m7);
+            m8 = _mm256_add_ps (m5, m8);
+            m9 = _mm256_add_ps (m6, m9);
+            
+            m1 = _mm256_broadcast_ss (&tiPL[DD]);
+            m2 = _mm256_broadcast_ss (&tiPR[DD]);
+            m3 = _mm256_broadcast_ss (&tiPA[DD]);
+            m4 = _mm256_mul_ps (m1, clL[2]);
+            m5 = _mm256_mul_ps (m2, clR[2]);
+            m6 = _mm256_mul_ps (m3, clA[2]);
+            m7 = _mm256_add_ps (m4, m7);
+            m8 = _mm256_add_ps (m5, m8);
+            m9 = _mm256_add_ps (m6, m9);
+            
+            m7 = _mm256_mul_ps (m7, m8);
+            *clP++ = _mm256_mul_ps (m7, m9);
+            
+            clL += 3;
+            clR += 3;
+            clA += 3;
+        }
+        tiPL += 9;
+        tiPR += 9;
+        tiPA += 9;
+    }
+    
+    return NO_ERROR;
+}
+#endif
+
+
+#if defined (SSE_ENABLED)
+/*----------------------------------------------------------------
+|
+|   CondLikeRoot_Dimethyl_SSE: 4by4 nucleotide model with or without rate
+|       variation using SSE instructions
+|
+-----------------------------------------------------------------*/
+int CondLikeRoot_Dimethyl_SSE (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           *pL, *pR, *pA, *tiPL, *tiPR, *tiPA;
+    __m128          *clL, *clR, *clP, *clA;
+    __m128          m1, m2, m3, m4, m5, m6, m7, m8, m9;
+    ModelInfo       *m;
+
+    m = &modelSettings[division];
+
+    /* flip state of node so that we are not overwriting old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+    
+    /* find conditional likelihood pointers */
+    clL = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->index       ]];
+    clA = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
+
+    /* find transition probabilities */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
+
+    tiPL = pL;
+    tiPR = pR;
+    tiPA = pA;
+
+    for (k=0; k<m->numRateCats; k++)
+        {
+        for (c=0; c<m->numVecChars; c++)
+            {
+            m1 = _mm_load1_ps (&tiPL[EE]);
+            m2 = _mm_load1_ps (&tiPR[EE]);
+            m3 = _mm_load1_ps (&tiPA[EE]);
+            m7 = _mm_mul_ps (m1, clL[0]);
+            m8 = _mm_mul_ps (m2, clR[0]);
+            m9 = _mm_mul_ps (m3, clA[0]);
+
+            m1 = _mm_load1_ps (&tiPL[EM]);
+            m2 = _mm_load1_ps (&tiPR[EM]);
+            m3 = _mm_load1_ps (&tiPA[EM]);
+            m4 = _mm_mul_ps (m1, clL[1]);
+            m5 = _mm_mul_ps (m2, clR[1]);
+            m6 = _mm_mul_ps (m3, clA[1]);
+            m7 = _mm_add_ps (m4, m7);
+            m8 = _mm_add_ps (m5, m8);
+            m9 = _mm_add_ps (m6, m9);
+
+            m1 = _mm_load1_ps (&tiPL[ED]);
+            m2 = _mm_load1_ps (&tiPR[ED]);
+            m3 = _mm_load1_ps (&tiPA[ED]);
+            m4 = _mm_mul_ps (m1, clL[2]);
+            m5 = _mm_mul_ps (m2, clR[2]);
+            m6 = _mm_mul_ps (m3, clA[2]);
+            m7 = _mm_add_ps (m4, m7);
+            m8 = _mm_add_ps (m5, m8);
+            m9 = _mm_add_ps (m6, m9);
+
+            m7 = _mm_mul_ps (m7, m8);
+            *clP++ = _mm_mul_ps (m7, m9);
+
+            m1 = _mm_load1_ps (&tiPL[ME]);
+            m2 = _mm_load1_ps (&tiPR[ME]);
+            m3 = _mm_load1_ps (&tiPA[ME]);
+            m7 = _mm_mul_ps (m1, clL[0]);
+            m8 = _mm_mul_ps (m2, clR[0]);
+            m9 = _mm_mul_ps (m3, clA[0]);
+
+            m1 = _mm_load1_ps (&tiPL[MM]);
+            m2 = _mm_load1_ps (&tiPR[MM]);
+            m3 = _mm_load1_ps (&tiPA[MM]);
+            m4 = _mm_mul_ps (m1, clL[1]);
+            m5 = _mm_mul_ps (m2, clR[1]);
+            m6 = _mm_mul_ps (m3, clA[1]);
+            m7 = _mm_add_ps (m4, m7);
+            m8 = _mm_add_ps (m5, m8);
+            m9 = _mm_add_ps (m6, m9);
+
+            m1 = _mm_load1_ps (&tiPL[MD]);
+            m2 = _mm_load1_ps (&tiPR[MD]);
+            m3 = _mm_load1_ps (&tiPA[MD]);
+            m4 = _mm_mul_ps (m1, clL[2]);
+            m5 = _mm_mul_ps (m2, clR[2]);
+            m6 = _mm_mul_ps (m3, clA[2]);
+            m7 = _mm_add_ps (m4, m7);
+            m8 = _mm_add_ps (m5, m8);
+            m9 = _mm_add_ps (m6, m9);
+
+            m7 = _mm_mul_ps (m7, m8);
+            *clP++ = _mm_mul_ps (m7, m9);
+
+            m1 = _mm_load1_ps (&tiPL[DE]);
+            m2 = _mm_load1_ps (&tiPR[DE]);
+            m3 = _mm_load1_ps (&tiPA[DE]);
+            m7 = _mm_mul_ps (m1, clL[0]);
+            m8 = _mm_mul_ps (m2, clR[0]);
+            m9 = _mm_mul_ps (m3, clA[0]);
+
+            m1 = _mm_load1_ps (&tiPL[DM]);
+            m2 = _mm_load1_ps (&tiPR[DM]);
+            m3 = _mm_load1_ps (&tiPA[DM]);
+            m4 = _mm_mul_ps (m1, clL[1]);
+            m5 = _mm_mul_ps (m2, clR[1]);
+            m6 = _mm_mul_ps (m3, clA[1]);
+            m7 = _mm_add_ps (m4, m7);
+            m8 = _mm_add_ps (m5, m8);
+            m9 = _mm_add_ps (m6, m9);
+
+            m1 = _mm_load1_ps (&tiPL[DD]);
+            m2 = _mm_load1_ps (&tiPR[DD]);
+            m3 = _mm_load1_ps (&tiPA[DD]);
+            m4 = _mm_mul_ps (m1, clL[2]);
+            m5 = _mm_mul_ps (m2, clR[2]);
+            m6 = _mm_mul_ps (m3, clA[2]);
+            m7 = _mm_add_ps (m4, m7);
+            m8 = _mm_add_ps (m5, m8);
+            m9 = _mm_add_ps (m6, m9);
+
+            m7 = _mm_mul_ps (m7, m8);
+            *clP++ = _mm_mul_ps (m7, m9);
+
+            clL += 3;
+            clR += 3;
+            clA += 3;
+            }
+        tiPL += 9;
+        tiPR += 9;
+        tiPA += 9;
+        }
+
+    return NO_ERROR;
+}
+#endif
+
+
+
+/*----------------------------------------------------------------
+|
+|   CondLikeRoot_Dimethyl: 3by3 dimethyl model with or without rate
+|       variation
+|
+-----------------------------------------------------------------*/
+int CondLikeRoot_Dimethyl (TreeNode *p, int division, int chain)
+{
+    int             a, c, h, i, j, k, shortCut, *lState=NULL, *rState=NULL, *aState=NULL;
+    CLFlt           *clL, *clR, *clP, *clA, *pL, *pR, *pA, *tiPL, *tiPR, *tiPA;
+    ModelInfo       *m;
+    
+    m = &modelSettings[division];
+
+    /* flip state of node so that we are not overwriting old cond likes */
+    FlipCondLikeSpace (m, chain, p->index);
+   
+    /* find conditional likelihood pointers */
+    clL = m->condLikes[m->condLikeIndex[chain][p->left->index ]];
+    clR = m->condLikes[m->condLikeIndex[chain][p->right->index]];
+    clP = m->condLikes[m->condLikeIndex[chain][p->index       ]];
+    clA = m->condLikes[m->condLikeIndex[chain][p->anc->index  ]];
+
+    /* find transition probabilities (or calculate instead) */
+    pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
+    pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
+    pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
+
+    /* find likelihoods of site patterns for left branch if terminal */
+    shortCut = 0;
+#   if !defined (DEBUG_NOSHORTCUTS)
+    if (p->left->left == NULL && m->isPartAmbig[p->left->index] == NO)
+        {
+        shortCut |= 1;
+        lState = m->termState[p->left->index];
+        tiPL = pL;
+        for (k=j=0; k<m->numRateCats; k++)
+            {
+            for (i=0; i<3; i++)
+                {
+                preLikeL[j++] = tiPL[0];
+                preLikeL[j++] = tiPL[3];
+                preLikeL[j++] = tiPL[6];
+                tiPL++;
+                }
+            /* for ambiguous */
+            for (i=0; i<3; i++)
+                preLikeL[j++] = 1.0;
+            tiPL += 6;
+            }
+        }
+
+    /* find likelihoods of site patterns for right branch if terminal */
+    if (p->right->left == NULL && m->isPartAmbig[p->right->index] == NO)
+        {
+        shortCut |= 2;
+        rState = m->termState[p->right->index];
+        tiPR = pR;
+        for (k=j=0; k<m->numRateCats; k++)
+            {
+            for (i=0; i<3; i++)
+                {
+                preLikeR[j++] = tiPR[0];
+                preLikeR[j++] = tiPR[3];
+                preLikeR[j++] = tiPR[6];
+                tiPR++;
+                }
+            /* for ambiguous */
+            for (i=0; i<3; i++)
+                preLikeR[j++] = 1.0;
+            tiPR += 6;
+            }
+        }
+
+    /* find likelihoods of site patterns for anc branch, always terminal */
+    if (m->isPartAmbig[p->anc->index] == YES)
+        {
+        shortCut = 4;
+        }
+    else 
+        {
+        aState = m->termState[p->anc->index];
+        tiPA = pA;
+        for (k=j=0; k<m->numRateCats; k++)
+            {
+            for (i=0; i<3; i++)
+                {
+                preLikeA[j++] = tiPA[0];
+                preLikeA[j++] = tiPA[3];
+                preLikeA[j++] = tiPA[6];
+                tiPA++;
+                }
+            /* for ambiguous */
+            for (i=0; i<3; i++)
+                preLikeA[j++] = 1.0;
+            tiPA += 6;
+            }
+        }
+#   else
+    shortCut = 4;
+#   endif
+
+    switch (shortCut)
+        {
+    case 4:
+        tiPL = pL;
+        tiPR = pR;
+        tiPA = pA;
+        for (k=h=0; k<m->numRateCats; k++)
+            {
+            for (c=0; c<m->numChars; c++)
+                {
+                clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
+                            *(tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2])
+                            *(tiPA[EE]*clA[0] + tiPA[EM]*clA[1] + tiPA[ED]*clA[2]);
+                clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
+                            *(tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2])
+                            *(tiPA[ME]*clA[0] + tiPA[MM]*clA[1] + tiPA[MD]*clA[2]);
+                clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
+                            *(tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2])
+                            *(tiPA[DE]*clA[0] + tiPA[DM]*clA[1] + tiPA[DD]*clA[2]);
+                clL += 3;
+                clR += 3;
+                clA += 3;
+                }
+            tiPL += 9;
+            tiPR += 9;
+            tiPA += 9;
+            }
+        break;
+
+    case 0:
+        tiPL = pL;
+        tiPR = pR;
+        for (k=h=0; k<m->numRateCats; k++)
+            {
+            for (c=0; c<m->numChars; c++)
+                {
+                i = aState[c] + k*12;
+                clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
+                            *(tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2])
+                            *preLikeA[i++];
+                clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
+                            *(tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2])
+                            *preLikeA[i++];
+                clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
+                            *(tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2])
+                            *preLikeA[i++];
+                clL += 3;
+                clR += 3;
+                }
+            tiPL += 9;
+            tiPR += 9;
+            }
+        break;
+
+    case 1:
+        tiPR = pR;
+        for (k=h=0; k<m->numRateCats; k++)
+            {
+            for (c=0; c<m->numChars; c++)
+                {
+                i = lState[c] + k*12;
+                j = aState[c] + k*12;
+                clP[h++] =   (tiPR[EE]*clR[0] + tiPR[EM]*clR[1] + tiPR[ED]*clR[2])
+                            *preLikeL[i++]*preLikeA[j++];
+                clP[h++] =   (tiPR[ME]*clR[0] + tiPR[MM]*clR[1] + tiPR[MD]*clR[2])
+                            *preLikeL[i++]*preLikeA[j++];
+                clP[h++] =   (tiPR[DE]*clR[0] + tiPR[DM]*clR[1] + tiPR[DD]*clR[2])
+                            *preLikeL[i++]*preLikeA[j++];
+                clR += 3;
+                }
+            tiPR += 9;
+            }
+        break;
+
+    case 2:
+        tiPL = pL;
+        for (k=h=0; k<m->numRateCats; k++)
+            {
+            for (c=0; c<m->numChars; c++)
+                {
+                i = rState[c] + k*12;
+                j = aState[c] + k*12;
+                clP[h++] =   (tiPL[EE]*clL[0] + tiPL[EM]*clL[1] + tiPL[ED]*clL[2])
+                            *preLikeR[i++]*preLikeA[j++];
+                clP[h++] =   (tiPL[ME]*clL[0] + tiPL[MM]*clL[1] + tiPL[MD]*clL[2])
+                            *preLikeR[i++]*preLikeA[j++];
+                clP[h++] =   (tiPL[DE]*clL[0] + tiPL[DM]*clL[1] + tiPL[DD]*clL[2])
+                            *preLikeR[i++]*preLikeA[j++];
+                clL += 3;
+                }
+            tiPL += 9;
+            }
+        break;
+
+    case 3:
+        for (k=h=0; k<m->numRateCats; k++)
+            {
+            for (c=0; c<m->numChars; c++)
+                {
+                a = lState[c] + k*12;
+                i = rState[c] + k*12;
+                j = aState[c] + k*12;
+                clP[h++] =   preLikeL[a++]*preLikeR[i++]*preLikeA[j++];
+                clP[h++] =   preLikeL[a++]*preLikeR[i++]*preLikeA[j++];
+                clP[h++] =   preLikeL[a++]*preLikeR[i++]*preLikeA[j++];
+                clP[h++] =   preLikeL[a++]*preLikeR[i++]*preLikeA[j++];
+                }
+            }
+        break;
+        }
+
+    return NO_ERROR;
+}
+
+/*----------------------------------------------------------------
+|
+|   CondLikeScaler_Dimethyl: 3by3 dimethyl model with or without rate
+|       variation
+|
+-----------------------------------------------------------------*/
+int CondLikeScaler_Dimethyl (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           scaler, *scP, *lnScaler, *clPtr, **clP;
+    ModelInfo       *m;
+
+    m = &modelSettings[division];
+
+    /* find conditional likelihood pointers */
+    clPtr = m->condLikes[m->condLikeIndex[chain][p->index]];
+    clP   = m->clP;
+    for (k=0; k<m->numRateCats; k++)
+        {
+        clP[k] = clPtr;
+        clPtr += m->numChars * m->numModelStates;
+        }
+    
+    /* find node scalers */
+    scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
+
+    /* find site scalers */
+    lnScaler = m->scalers[m->siteScalerIndex[chain]];
+
+    /* rescale values */
+    for (c=0; c<m->numChars; c++)
+        {
+        scaler = 0.0;
+        for (k=0; k<m->numRateCats; k++)
+            {
+            if (clP[k][0] > scaler)
+                scaler = clP[k][0];
+            if (clP[k][1] > scaler)
+                scaler = clP[k][1];
+            if (clP[k][2] > scaler)
+                scaler = clP[k][2];
+            }
+
+        for (k=0; k<m->numRateCats; k++)
+            {
+            clP[k][0] /= scaler;
+            clP[k][1] /= scaler;
+            clP[k][2] /= scaler;
+            clP[k] += 3;
+            }
+
+        scP[c]       = (CLFlt) log(scaler); /* store node scaler */
+        lnScaler[c] += scP[c];              /* add into tree scaler  */
+        }
+
+    m->unscaledNodes[chain][p->index] = 0;   /* set unscaled nodes to 0 */
+
+    return NO_ERROR;
+}
+
+#if defined (AVX_ENABLED)
+/*----------------------------------------------------------------
+ |
+ |   CondLikeScaler_Dimethyl_AVX: 4by4 nucleotide model with or without rate
+ |       variation using AVX (or AVX + FMA) code
+ |
+ -----------------------------------------------------------------*/
+int CondLikeScaler_Dimethyl_AVX (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           *scP, *lnScaler;
+    __m256          *clPtr, **clP, *scP_AVX, m1;
+    ModelInfo       *m;
+    
+    m = &modelSettings[division];
+    
+    /* find conditional likelihood pointers */
+    clPtr = (__m256 *) m->condLikes[m->condLikeIndex[chain][p->index]];
+    clP   = m->clP_AVX;
+    for (k=0; k<m->numRateCats; k++)
+    {
+        clP[k] = clPtr;
+        clPtr += m->numVecChars * m->numModelStates;
+    }
+    
+    /* find node scalers */
+    scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
+    scP_AVX = (__m256 *) scP;
+    
+    /* find site scalers */
+    lnScaler = m->scalers[m->siteScalerIndex[chain]];
+    
+    /* rescale */
+    for (c=0; c<m->numVecChars; c++)
+    {
+        m1 = _mm256_setzero_ps ();
+
+        for (k=0; k<m->numRateCats; k++)
+        {
+            m1 = _mm256_max_ps (m1, clP[k][0]);
+            m1 = _mm256_max_ps (m1, clP[k][1]);
+            m1 = _mm256_max_ps (m1, clP[k][2]);
+        }
+        
+        for (k=0; k<m->numRateCats; k++)
+        {
+            *clP[k] = _mm256_div_ps (*clP[k], m1);
+            clP[k]++;
+            *clP[k] = _mm256_div_ps (*clP[k], m1);
+            clP[k]++;
+            *clP[k] = _mm256_div_ps (*clP[k], m1);
+            clP[k]++;
+        }
+        
+        (*scP_AVX++) = m1;
+    }
+
+    /* update site scalers */
+    for (c=0; c<m->numChars; c++)
+        lnScaler[c] += (scP[c] = logf (scP[c]));    /* add log of new scaler into tree scaler  */
+    
+    m->unscaledNodes[chain][p->index] = 0;   /* set unscaled nodes to 0 */
+
+    return NO_ERROR;
+
+}
+#endif
+
+
+#if defined (SSE_ENABLED)
+/*----------------------------------------------------------------
+|
+|   CondLikeScaler_Dimethyl_SSE: 4by4 nucleotide model with or without rate
+|       variation using SSE code
+|
+-----------------------------------------------------------------*/
+int CondLikeScaler_Dimethyl_SSE (TreeNode *p, int division, int chain)
+{
+    int             c, k;
+    CLFlt           *scP, *lnScaler;
+    __m128          *clPtr, **clP, *scP_SSE, m1;
+    ModelInfo       *m;
+    
+    m = &modelSettings[division];
+
+    /* find conditional likelihood pointers */
+    clPtr = (__m128 *) m->condLikes[m->condLikeIndex[chain][p->index]];
+    clP   = m->clP_SSE;
+    for (k=0; k<m->numRateCats; k++)
+        {
+        clP[k] = clPtr;
+        clPtr += m->numVecChars * m->numModelStates;
+        }
+    
+    /* find node scalers */
+    scP = m->scalers[m->nodeScalerIndex[chain][p->index]];
+    scP_SSE = (__m128 *) scP;
+
+    /* find site scalers */
+    lnScaler = m->scalers[m->siteScalerIndex[chain]];
+
+    /* rescale */
+    for (c=0; c<m->numVecChars; c++)
+        {
+        m1 = _mm_setzero_ps ();
+        for (k=0; k<m->numRateCats; k++)
+            {
+            m1 = _mm_max_ps (m1, clP[k][0]);
+            m1 = _mm_max_ps (m1, clP[k][1]);
+            m1 = _mm_max_ps (m1, clP[k][2]);
+            }
+
+        for (k=0; k<m->numRateCats; k++)
+            {
+            *clP[k] = _mm_div_ps (*clP[k], m1);
+            clP[k]++;
+            *clP[k] = _mm_div_ps (*clP[k], m1);
+            clP[k]++;
+            *clP[k] = _mm_div_ps (*clP[k], m1);
+            clP[k]++;
+            }
+
+        (*scP_SSE++) = m1;
+        }
+
+    /* update site scalers */
+    for (c=0; c<m->numChars; c++)
+        lnScaler[c] += (scP[c] = (CLFlt)(log (scP[c])));    /* add log of new scaler into tree scaler  */
+
+    m->unscaledNodes[chain][p->index] = 0;   /* number of unscaled nodes is 0 */
+
+    return NO_ERROR;
+    
+}
+#endif
+
+
+/*------------------------------------------------------------------
+|
+|   Likelihood_Dimethyl: 3by3 nucleotide models with or without rate
+|       variation
+|
+-------------------------------------------------------------------*/
+int Likelihood_Dimethyl (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
+{
+    int             c, k, hasPInvar;
+    MrBFlt          freq, likeI, bs[3], like, pInvar=0.0, alpha, beta, *dimRates=NULL,
+                    denom;
+    CLFlt           *clPtr, **clP, *lnScaler, *nSitesOfPat, *clInvar=NULL;
+    ModelInfo       *m;
+
+    /* find model settings and pInvar, invar cond likes */
+    m = &modelSettings[division];
+
+    if (m->pInvar == NULL)
+        {
+        hasPInvar = NO;
+        }
+    else
+        {
+        hasPInvar = YES;
+        pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
+        clInvar = m->invCondLikes;
+        }
+
+    /* find conditional likelihood pointers */
+    clPtr = m->condLikes[m->condLikeIndex[chain][p->index]];
+    clP = m->clP;
+  
+    for (k=0; k<m->numRateCats; k++)
+        {
+        clP[k] = clPtr;
+        clPtr += m->numChars * m->numModelStates;
+        }
+    
+    /* find base frequencies */
+    /*  bs = GetParamSubVals (m->stateFreq, chain, state[chain]); */
+    dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
+    alpha = dimRates[0];
+    beta = dimRates[1]; /*  dimRates[1]; */
+    denom = (alpha+beta) * (alpha+beta);
+
+    bs[0] = (beta*beta)/denom;
+    bs[1] = (2.0*alpha*beta)/denom;
+    bs[2] = (alpha*alpha)/denom;
+
+    /* find category frequencies */
+    if (hasPInvar == NO)
+        freq =  1.0 /  m->numRateCats;
+    else
+        freq =  (1.0 - pInvar) /  m->numRateCats;
+
+    /* find tree scaler */
+    lnScaler = m->scalers[m->siteScalerIndex[chain]];
+
+    /* find nSitesOfPat */
+    nSitesOfPat = numSitesOfPat + (whichSitePats*numCompressedChars) + m->compCharStart;
+
+    /* reset lnL */
+    *lnL = 0.0;
+
+    /* loop over characters */
+    if (hasPInvar == NO)
+        {
+        for (c=0; c<m->numChars; c++)
+            {
+            like = 0.0;
+            for (k=0; k<m->numRateCats; k++)
+                {
+                like += (clP[k][0] * bs[0] + clP[k][1] * bs[1] + clP[k][2] * bs[2]);
+                clP[k] += 3;
+                }
+            like *= freq;
+            
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+                {
+#   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+                }
+            else    
+                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
+            }
+        }
+    else
+        {
+        /* has invariable category */
+        for (c=0; c<m->numChars; c++)
+            {
+            like = 0.0;
+            for (k=0; k<m->numRateCats; k++)
+                {
+                like += (clP[k][0] * bs[0] + clP[k][1] * bs[1] + clP[k][2] * bs[2]);
+                clP[k] += 3;
+                }
+            like *= freq;
+            likeI = (clInvar[0] * bs[0] + clInvar[1] * bs[1] + clInvar[2] * bs[2]) * pInvar;
+            if (lnScaler[c] < -200)
+                {
+                /* we are not going to be able to exponentiate the scaling factor */
+                if (likeI > 1E-70)
+                    {
+                    /* forget about like; it is going to be insignificant compared to likeI */
+                    like = likeI;
+                    }
+                else
+                    {
+                    /* treat likeI as if 0.0, that is, ignore it completely */
+                    }
+                }
+            else
+                like = like + (likeI / exp (lnScaler[c]));
+
+            clInvar += 3;
+
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+                {
+#   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+                }
+            else    
+                {
+                (*lnL) += (lnScaler[c] + log(like)) * nSitesOfPat[c];
+                }
+            }       
+        }
+
+    return NO_ERROR;
+}
+
+#if defined (FMA_ENABLED)
+/*------------------------------------------------------------------
+ |
+ |   Likelihood_Dimethyl_FMA: 4by4 nucleotide models with or without rate
+ |       variation using AVX + FMA code
+ |
+ -------------------------------------------------------------------*/
+int Likelihood_Dimethyl_FMA (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
+{
+    int             c, k, hasPInvar;
+    MrBFlt          freq, bs[3], pInvar=0.0, like, likeI;
+    CLFlt           *lnScaler, *nSitesOfPat, *lnL_Vec, *lnLI_Vec;
+    __m256          *clPtr, **clP, *clInvar=NULL;
+    __m256          mE, mM, mD, mFreq, mPInvar=_mm256_set1_ps(0.0f), mLike;
+    ModelInfo       *m;
+    MrBFlt          alpha, beta, denom, *dimRates=NULL;
+
+    /* find model settings and pInvar, invar cond likes */
+    m = &modelSettings[division];
+    if (m->pInvar == NULL)
+    {
+        hasPInvar = NO;
+    }
+    else
+    {
+        hasPInvar = YES;
+        pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
+        mPInvar = _mm256_set1_ps ((CLFlt)(pInvar));
+        clInvar = (__m256 *) (m->invCondLikes);
+    }
+
+    /* find conditional likelihood pointers */
+    clPtr = (__m256 *) (m->condLikes[m->condLikeIndex[chain][p->index]]);
+    clP = m->clP_AVX;
+    for (k=0; k<m->numRateCats; k++)
+    {
+        clP[k] = clPtr;
+        clPtr += m->numVecChars * m->numModelStates;
+    }
+    lnL_Vec  = m->lnL_Vec;
+    lnLI_Vec = m->lnLI_Vec;
+
+    /* find base frequencies */
+    dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
+    alpha = dimRates[0];
+    beta = dimRates[1]; /*  dimRates[1]; */
+    denom = (alpha+beta) * (alpha+beta);
+
+    bs[0] = (beta*beta)/denom;
+    bs[1] = (2.0*alpha*beta)/denom;
+    bs[2] = (alpha*alpha)/denom;
+
+    mE = _mm256_set1_ps ((CLFlt)(bs[0]));
+    mM = _mm256_set1_ps ((CLFlt)(bs[1]));
+    mD = _mm256_set1_ps ((CLFlt)(bs[2]));
+    
+    /* find category frequencies */
+    if (hasPInvar == NO)
+        freq =  1.0 / m->numRateCats;
+    else
+        freq =  (1.0 - pInvar) / m->numRateCats;
+    mFreq = _mm256_set1_ps ((CLFlt)(freq));
+    
+    /* find tree scaler */
+    lnScaler = m->scalers[m->siteScalerIndex[chain]];
+    
+    /* find nSitesOfPat */
+    nSitesOfPat = numSitesOfPat + (whichSitePats*numCompressedChars) + m->compCharStart;
+    
+    /* reset lnL */
+    *lnL = 0.0;
+    
+    /* calculate variable likelihood */
+    for (c=0; c<m->numVecChars; c++)
+    {
+        mLike = _mm256_setzero_ps ();
+        for (k=0; k<m->numRateCats; k++)
+        {
+            mLike = _mm256_fmadd_ps (clP[k][0], mE, mLike);
+            mLike = _mm256_fmadd_ps (clP[k][1], mM, mLike);
+            mLike = _mm256_fmadd_ps (clP[k][2], mD, mLike);
+            clP[k] += 3;
+        }
+        mLike = _mm256_mul_ps (mLike, mFreq);
+        _mm256_store_ps (lnL_Vec, mLike);
+        lnL_Vec += m->numFloatsPerVec;
+    }
+    
+    /* calculate invariable likelihood */
+    if (hasPInvar == YES)
+    {
+        for (c=0; c<m->numVecChars; c++)
+        {
+            mLike = _mm256_mul_ps (clInvar[0], mE);
+            mLike = _mm256_fmadd_ps (clInvar[1], mM, mLike);
+            mLike = _mm256_fmadd_ps (clInvar[2], mD, mLike);
+            mLike = _mm256_mul_ps (mLike, mPInvar);
+            _mm256_store_ps (lnLI_Vec, mLike);
+            clInvar += 3;
+            lnLI_Vec += m->numFloatsPerVec;
+        }
+    }
+    
+    /* accumulate results */
+    if (hasPInvar == NO)
+    {
+        for (c=0; c<m->numChars; c++)
+        {
+            like = m->lnL_Vec[c];
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+            {
+#   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+            }
+            else
+            {
+                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
+            }
+        }
+    }
+    else
+    {
+        /* has invariable category */
+        for (c=0; c<m->numChars; c++)
+        {
+            like  = m->lnL_Vec[c];
+            likeI = m->lnLI_Vec[c];
+            if (lnScaler[c] < -200)
+            {
+                /* we are not going to be able to exponentiate the scaling factor */
+                if (likeI > 1E-70)
+                {
+                    /* forget about like; it is going to be insignificant compared to likeI */
+                    like = likeI;
+                }
+                else
+                {
+                    /* treat likeI as if 0.0, that is, ignore it completely */
+                }
+            }
+            else
+                like = like + (likeI / exp (lnScaler[c]));
+            
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+            {
+#   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+            }
+            else
+            {
+                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
+            }
+        }
+    }
+    
+    return NO_ERROR;
+}
+#endif
+
+
+#if defined (AVX_ENABLED)
+/*------------------------------------------------------------------
+ |
+ |   Likelihood_Dimethyl_AVX: 4by4 nucleotide models with or without rate
+ |       variation using AVX code
+ |
+ -------------------------------------------------------------------*/
+int Likelihood_Dimethyl_AVX (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
+{
+    int             c, k, hasPInvar;
+    MrBFlt          freq, bs[3], pInvar=0.0, like, likeI;
+    CLFlt           *lnScaler, *nSitesOfPat, *lnL_Vec, *lnLI_Vec;
+    __m256          *clPtr, **clP, *clInvar=NULL;
+    __m256          m1, mE, mM, mD,  mFreq, mPInvar=_mm256_set1_ps(0.0f), mLike;
+    ModelInfo       *m;
+    MrBFlt          alpha, beta, denom, *dimRates;
+
+    /* find model settings and pInvar, invar cond likes */
+    m = &modelSettings[division];
+    if (m->pInvar == NULL)
+    {
+        hasPInvar = NO;
+    }
+    else
+    {
+        hasPInvar = YES;
+        pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
+        mPInvar = _mm256_set1_ps ((CLFlt)(pInvar));
+        clInvar = (__m256 *) (m->invCondLikes);
+    }
+    
+    /* find conditional likelihood pointers */
+    clPtr = (__m256 *) (m->condLikes[m->condLikeIndex[chain][p->index]]);
+    clP = m->clP_AVX;
+    for (k=0; k<m->numRateCats; k++)
+    {
+        clP[k] = clPtr;
+        clPtr += m->numVecChars * m->numModelStates;
+    }
+    lnL_Vec  = m->lnL_Vec;
+    lnLI_Vec = m->lnLI_Vec;
+    
+    /* find base frequencies */
+    dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
+    alpha = dimRates[0];
+    beta = dimRates[1]; /*  dimRates[1]; */
+    denom = (alpha+beta) * (alpha+beta);
+
+    bs[0] = (beta*beta)/denom;
+    bs[1] = (2.0*alpha*beta)/denom;
+    bs[2] = (alpha*alpha)/denom;
+
+    mE = _mm256_set1_ps ((CLFlt)(bs[0]));
+    mM = _mm256_set1_ps ((CLFlt)(bs[1]));
+    mD = _mm256_set1_ps ((CLFlt)(bs[2]));
+    
+    /* find category frequencies */
+    if (hasPInvar == NO)
+        freq =  1.0 / m->numRateCats;
+    else
+        freq =  (1.0 - pInvar) / m->numRateCats;
+    mFreq = _mm256_set1_ps ((CLFlt)(freq));
+    
+    /* find tree scaler */
+    lnScaler = m->scalers[m->siteScalerIndex[chain]];
+    
+    /* find nSitesOfPat */
+    nSitesOfPat = numSitesOfPat + (whichSitePats*numCompressedChars) + m->compCharStart;
+    
+    /* reset lnL */
+    *lnL = 0.0;
+    
+    /* calculate variable likelihood */
+    for (c=0; c<m->numVecChars; c++)
+    {
+        mLike = _mm256_setzero_ps ();
+        for (k=0; k<m->numRateCats; k++)
+        {
+            m1    = _mm256_mul_ps (clP[k][0], mE);
+            mLike = _mm256_add_ps (mLike, m1);
+            m1    = _mm256_mul_ps (clP[k][1], mM);
+            mLike = _mm256_add_ps (mLike, m1);
+            m1    = _mm256_mul_ps (clP[k][2], mD);
+            mLike = _mm256_add_ps (mLike, m1);
+            clP[k] += 3;
+        }
+        mLike = _mm256_mul_ps (mLike, mFreq);
+        _mm256_store_ps (lnL_Vec, mLike);
+        lnL_Vec += m->numFloatsPerVec;
+    }
+    
+    /* calculate invariable likelihood */
+    if (hasPInvar == YES)
+    {
+        for (c=0; c<m->numVecChars; c++)
+        {
+            mLike = _mm256_mul_ps (clInvar[0], mE);
+            m1    = _mm256_mul_ps (clInvar[1], mM);
+            mLike = _mm256_add_ps (mLike, m1);
+            m1    = _mm256_mul_ps (clInvar[2], mD);
+            mLike = _mm256_add_ps (mLike, m1);
+            mLike = _mm256_mul_ps (mLike, mPInvar);
+            
+            _mm256_store_ps (lnLI_Vec, mLike);
+            clInvar += 3;
+            lnLI_Vec += m->numFloatsPerVec;
+        }
+    }
+    
+    /* accumulate results */
+    if (hasPInvar == NO)
+    {
+        for (c=0; c<m->numChars; c++)
+        {
+            like = m->lnL_Vec[c];
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+            {
+#   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+            }
+            else
+            {
+                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
+            }
+        }
+    }
+    else
+    {
+        /* has invariable category */
+        for (c=0; c<m->numChars; c++)
+        {
+            like  = m->lnL_Vec[c];
+            likeI = m->lnLI_Vec[c];
+            if (lnScaler[c] < -200)
+            {
+                /* we are not going to be able to exponentiate the scaling factor */
+                if (likeI > 1E-70)
+                {
+                    /* forget about like; it is going to be insignificant compared to likeI */
+                    like = likeI;
+                }
+                else
+                {
+                    /* treat likeI as if 0.0, that is, ignore it completely */
+                }
+            }
+            else
+                like = like + (likeI / exp (lnScaler[c]));
+            
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+            {
+#   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+            }
+            else
+            {
+                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
+            }
+        }
+    }
+    
+    return NO_ERROR;
+}
+#endif
+
+
+#if defined (SSE_ENABLED)
+/*------------------------------------------------------------------
+|
+|   Likelihood_Dimethyl_SSE: 4by4 nucleotide models with or without rate
+|       variation
+|
+-------------------------------------------------------------------*/
+int Likelihood_Dimethyl_SSE (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats)
+{
+    int             c, k, hasPInvar;
+    MrBFlt          freq, bs[3], pInvar=0.0, like, likeI;
+    CLFlt           *lnScaler, *nSitesOfPat, *lnL_Vec, *lnLI_Vec;
+    __m128          *clPtr, **clP, *clInvar=NULL;
+    __m128          m1, mE, mM, mD, mFreq, mPInvar=_mm_set1_ps(0.0f), mLike;
+    ModelInfo       *m;
+    MrBFlt          alpha, beta, denom, *dimRates=NULL;
+
+    /* find model settings and pInvar, invar cond likes */
+    m = &modelSettings[division];
+    if (m->pInvar == NULL)
+        {
+        hasPInvar = NO;
+        }
+    else
+        {
+        hasPInvar = YES;
+        pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
+        mPInvar = _mm_set1_ps ((CLFlt)(pInvar));
+        clInvar = (__m128 *) (m->invCondLikes);
+        }
+
+    /* find conditional likelihood pointers */
+    clPtr = (__m128 *) (m->condLikes[m->condLikeIndex[chain][p->index]]);
+    clP = m->clP_SSE;
+    for (k=0; k<m->numRateCats; k++)
+        {
+        clP[k] = clPtr;
+        clPtr += m->numVecChars * m->numModelStates;
+        }
+    lnL_Vec  = m->lnL_Vec;
+    lnLI_Vec = m->lnLI_Vec;
+    
+    /* find base frequencies */
+    dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
+    alpha = dimRates[0];
+    beta = dimRates[1]; /*  dimRates[1]; */
+    denom = (alpha+beta) * (alpha+beta);
+
+    bs[0] = (beta*beta)/denom;
+    bs[1] = (2.0*alpha*beta)/denom;
+    bs[2] = (alpha*alpha)/denom;
+
+    mE = _mm_set1_ps ((CLFlt)(bs[0]));
+    mM = _mm_set1_ps ((CLFlt)(bs[1]));
+    mD = _mm_set1_ps ((CLFlt)(bs[2]));
+
+    /* find category frequencies */
+    if (hasPInvar == NO)
+        freq =  1.0 / m->numRateCats;
+    else
+        freq =  (1.0 - pInvar) / m->numRateCats;
+    mFreq = _mm_set1_ps ((CLFlt)(freq));
+
+    /* find tree scaler */
+    lnScaler = m->scalers[m->siteScalerIndex[chain]];
+
+    /* find nSitesOfPat */
+    nSitesOfPat = numSitesOfPat + (whichSitePats*numCompressedChars) + m->compCharStart;
+    
+    /* reset lnL */
+    *lnL = 0.0;
+
+    /* calculate variable likelihood */
+    for (c=0; c<m->numVecChars; c++)
+        {
+        mLike = _mm_setzero_ps ();
+        for (k=0; k<m->numRateCats; k++)
+            {
+            m1    = _mm_mul_ps (clP[k][0], mE);
+            mLike = _mm_add_ps (mLike, m1);
+            m1    = _mm_mul_ps (clP[k][1], mM);
+            mLike = _mm_add_ps (mLike, m1);
+            m1    = _mm_mul_ps (clP[k][2], mD);
+            mLike = _mm_add_ps (mLike, m1);
+            clP[k] += 3;
+            }
+        mLike = _mm_mul_ps (mLike, mFreq);
+        _mm_store_ps (lnL_Vec, mLike);
+        lnL_Vec += m->numFloatsPerVec;
+        }
+    
+    /* calculate invariable likelihood */
+    if (hasPInvar == YES)
+        {
+        for (c=0; c<m->numVecChars; c++)
+            {
+            mLike = _mm_mul_ps (clInvar[0], mE);
+            m1    = _mm_mul_ps (clInvar[1], mM);
+            mLike = _mm_add_ps (mLike, m1);
+            m1    = _mm_mul_ps (clInvar[2], mD);
+            mLike = _mm_add_ps (mLike, m1);
+            mLike = _mm_mul_ps (mLike, mPInvar);
+
+            _mm_store_ps (lnLI_Vec, mLike);
+            clInvar += 3;
+            lnLI_Vec += m->numFloatsPerVec;
+            }
+        }
+
+    /* accumulate results */
+    if (hasPInvar == NO)
+        {
+        for (c=0; c<m->numChars; c++)
+            {
+            like = m->lnL_Vec[c];
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+                {
+#   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+                }
+            else    
+                {
+                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
+                }
+            }
+        }
+    else
+        {
+        /* has invariable category */
+        for (c=0; c<m->numChars; c++)
+            {
+            like  = m->lnL_Vec[c];
+            likeI = m->lnLI_Vec[c];
+            if (lnScaler[c] < -200)
+                {
+                /* we are not going to be able to exponentiate the scaling factor */
+                if (likeI > 1E-70)
+                    {
+                    /* forget about like; it is going to be insignificant compared to likeI */
+                    like = likeI;
+                    }
+                else
+                    {
+                    /* treat likeI as if 0.0, that is, ignore it completely */
+                    }
+                }
+            else
+                like = like + (likeI / exp (lnScaler[c]));
+
+            /* check against LIKE_EPSILON (values close to zero are problematic) */
+            if (like < LIKE_EPSILON)
+                {
+#   ifdef DEBUG_LIKELIHOOD
+                MrBayesPrint ("%s   WARNING: In LIKE_EPSILON - for division %d char %d has like = %1.30le\n", spacer, division+1, c+1, like);
+#   endif
+                (*lnL) = MRBFLT_NEG_MAX;
+                abortMove = YES;
+                return ERROR;
+                }
+            else    
+                {
+                (*lnL) += (lnScaler[c] +  log(like)) * nSitesOfPat[c];
+                }
+            }
+        }
+
+    return NO_ERROR;
+}
+#endif
+
+
+/*-----------------------------------------------------------------
+|
+|   TiProbs_Hky: update transition probabilities for 4by4
+|       nucleotide model with nst == 2 (K80/HKY85)
+|       with or without rate variation
+|
+------------------------------------------------------------------*/
+int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
+{
+    int         i, j, k, n, s, index;
+    MrBFlt      t, pis[3], alpha, beta, *dimRates=NULL, *ptr,  *eigenValues, *cijk, EigValexp[64], sum,
+                *catRate, baseRate, theRate, length, denom;
+    MrBFlt      rER;
+    CLFlt       *tiP;
+    ModelInfo   *m;
+    int tipIndex;
+
+    CLFlt *rECL; 
+    CLFlt readErrProbs[9];
+ 
+    /* MrBFlt      a,b, a2, b2, ab, e2, e1; */
+    /*   MrBFlt      scale; */
+
+    m = &modelSettings[division];
+    n = m->numModelStates;
+
+    /* find transition probabilities */
+    tiP = m->tiProbs[m->tiProbsIndex[chain][p->index]];
+
+    /* get revmat rates */
+    dimRates =  GetParamVals (m->dimethylRate, chain, state[chain]);
+    alpha = dimRates[0];
+    beta = dimRates[1];
+
+    /* get base rate */
+    baseRate = GetRate (division, chain);
+    denom = ((alpha + beta) * (alpha + beta));
+    pis[0] = beta*beta / denom;
+    pis[1] = 2.0*alpha*beta / denom; 
+    pis[2] = alpha*alpha / denom;
+
+    /* compensate for invariable sites if appropriate */
+    if (m->pInvar != NULL)
+        baseRate /= (1.0 - (*GetParamVals(m->pInvar, chain, state[chain])));
+    
+    /* get category rates */
+    theRate = 1.0;
+    if (m->shape != NULL)
+        catRate = GetParamSubVals (m->shape, chain, state[chain]);
+    else if (m->mixtureRates != NULL)
+        catRate = GetParamSubVals (m->mixtureRates, chain, state[chain]);
+    else
+        catRate = &theRate;
+
+    /* get eigenvalues and cijk pointers */
+    eigenValues = m->cijks[m->cijkIndex[chain]];
+    cijk        = eigenValues + (2 * n);
+
+    /* find length */
+    if (m->cppEvents != NULL)
+        {
+        length = GetParamSubVals (m->cppEvents, chain, state[chain])[p->index];
+        }
+    else if (m->tk02BranchRates != NULL)
+        {
+        length = GetParamSubVals (m->tk02BranchRates, chain, state[chain])[p->index];
+        }
+    else if (m->wnBranchRates != NULL)
+        {
+        length = GetParamSubVals (m->wnBranchRates, chain, state[chain])[p->index];
+        }
+    else if (m->ilnBranchRates != NULL)
+        {
+        length = GetParamSubVals (m->ilnBranchRates, chain, state[chain])[p->index];
+        }
+    else if (m->igrBranchRates != NULL)
+        {
+        length = GetParamSubVals (m->igrBranchRates, chain, state[chain])[p->index];
+        }
+    else if (m->mixedBrchRates != NULL)
+        {
+        length = GetParamSubVals (m->mixedBrchRates, chain, state[chain])[p->index];
+        }
+    else
+        length = p->length;
+
+    /* numerical errors will ensue if we allow very large or very small branch lengths,
+       which might occur in relaxed clock models */
+    /*  
+    scale = 2*alpha*beta * (1+beta+alpha); 
+
+    a = alpha / (alpha + beta) ;
+    b = beta / (alpha + beta) ;
+    a2 = a * a;
+    ab = a * b;
+    b2 = b * b;
+    */
+
+    /* fill in values */
+    for (k=index=0; k<m->numRateCats; k++)
+        {
+        t =  length * baseRate * catRate[k] * 2.0;  /*  correction factor of 2 since 2 sites per site  */
+
+        /*
+        e1 = exp(-1.0*(a+b) * t);
+        e2 = exp(-2.0*(a+b) * t);
+        */
+
+        if (t < TIME_MIN)
+            {
+            /* Fill in identity matrix */
+            for (i=0; i<n; i++)
+                {
+                for (j=0; j<n; j++)
+                    {
+                    if (i == j)
+                        tiP[index++] = 1.0;
+                    else
+                        tiP[index++] = 0.0;
+                    }
+                }
+            }
+        else if (t > TIME_MAX)
+            {
+            /* Fill in stationary matrix */
+            for (i=0; i<n; i++)
+                for (j=0; j<n; j++)
+                    tiP[index++] = (CLFlt) pis[j];
+            }
+        else
+            {
+            /* We actually need to do some work... */
+            for (s=0; s<n; s++)
+                EigValexp[s] =  exp(eigenValues[s] * t);
+
+            ptr = cijk;
+            for (i=0; i<n; i++)
+                {
+                for (j=0; j<n; j++)
+                    {
+                    sum = 0.0;
+                    for (s=0; s<n; s++)
+                        sum += (*ptr++) * EigValexp[s];
+                    tiP[index++] = (CLFlt) ((sum < 0.0) ? 0.0 : sum);
+                    }
+                }
+
+            }
+        }
+
+    //for (index=0; indexm->tiProbLength; index++)
+    //    if (tiP[index] > 1.0 || tiP[index] < 0.0)
+    //        MrBayesPrint("bad ti prob...! \n");
+ 
+    // if left/right node are tips, calc probabilities 
+    // by summing over the read error probabilities  
+    //
+    if (p->index < numLocalTaxa)
+        {
+        rER=*GetParamVals (m->readErrRate, chain, state[chain]);
+        if (rER > 0) 
+            {
+            for (i=index=0; i<3; i++)
+                {
+                for (j=0; j<3; j++)
+                   {
+                   if (j==i) 
+                       readErrProbs[index++]=(1 - 2.0*rER);
+                   else 
+                       readErrProbs[index++]=rER;
+                   }
+               }
+
+            rECL=m->readErrCls[m->readErrClIndex[chain][p->index]];
+
+            /*  reset...  */
+            for (i=0;i<m->readErrClLength;i++)
+                    rECL[i]=0.0;
+
+            for (k=index=tipIndex=0; k<m->numRateCats; k++)
+                {
+                for (i=0; i<n; i++) 
+                    { 
+                    for (j=0; j<n; j++) 
+                        {
+                        /*  rECL[index] = P(j -> i) = \sum_x P(x, i) P(x->j) */
+                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+0]*readErrProbs[i+0]);
+                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+3]*readErrProbs[i+3]);
+                        rECL[index]+=(CLFlt)(tiP[tipIndex+j+6]*readErrProbs[i+6]);
+                        index++;
+                        }
+                    }
+                tipIndex+=9;
+                }
+            }
+        }
+                                                                           
+    return (NO_ERROR);
+}
+
 

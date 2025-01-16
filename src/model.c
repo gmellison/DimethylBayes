@@ -168,8 +168,6 @@ int             *stateSize;                  /* # states for each compressed cha
 // char         *plotTokenP;                 /* plotToken[CMD_STRING_LENGTH];*/
 
 
-
-
 /*-----------------------------------------------------------------------
 |
 |   AddDummyChars: Add dummy characters to relevant partitions
@@ -1908,10 +1906,11 @@ void CheckCharCodingType (Matrix *m, CharInfo *ci)
 -------------------------------------------------------------*/
 int CheckModel (void)
 {
-    int         i, j, k, answer;
+    int         ch, i, j, k, answer;
     Tree        *t = NULL;
     TreeNode    *p;
-    
+    MrBFlt      treeAge, clockRate;
+ 
     /* there should only be one calibrated tree */
     for (i=0; i<numTrees; i++)
         {
@@ -1941,6 +1940,56 @@ int CheckModel (void)
                     {
                     MrBayesPrint("%s   Stopping the run...\n\n", spacer);
                     return (ERROR);
+                    }
+                }
+            }
+        }
+
+    /* 
+     * Check that the clock rate is consistent with the tree age prior. We cannot check this earlier
+     * because the clock rate and tree age are set separately, and we do not know in which order they are set.
+     * We need to check all chains because start values are set separately for each chain.
+     */
+    for (i=0; i<numTrees; i++)
+        {
+        for (ch=0; ch<numGlobalChains; ch++)
+            {
+            t = GetTreeFromIndex(i,ch,0);
+            if (t->isClock == YES && t->isCalibrated == YES)
+                {
+                clockRate = *GetParamVals(modelSettings[t->relParts[0]].clockRate, ch, 0);
+                treeAge = t->root->left->nodeDepth / clockRate;
+                if (!AreDoublesEqual(treeAge, t->root->left->age, 0.000001))
+                    {
+                    MrBayesPrint("%s   ERROR: The tree age setting is inconsistent with the specified tree age prior.\n", spacer);
+                    return (ERROR);
+                    }
+                if (modelParams[t->relParts[0]].treeAgePr.prior == fixed)
+                    {
+                    if (!AreDoublesEqual(treeAge, modelParams[t->relParts[0]].treeAgePr.priorParams[0], 0.000001))
+                        {
+                        MrBayesPrint("%s   ERROR: The clock rate is inconsistent with the specified tree age prior.\n", spacer);
+                        return (ERROR);
+                        }
+                    }
+                else if (modelParams[t->relParts[0]].treeAgePr.prior == uniform)
+                    {
+                    if (treeAge < modelParams[t->relParts[0]].treeAgePr.priorParams[0] || treeAge > modelParams[t->relParts[0]].treeAgePr.priorParams[1])
+                        {    
+                        MrBayesPrint("%s   ERROR: The clock rate is inconsistent with the specified tree age prior.\n", spacer);
+                        return (ERROR);
+                        }
+                    }
+                else if (modelParams[t->relParts[0]].treeAgePr.prior == offsetExponential ||
+                         modelParams[t->relParts[0]].treeAgePr.prior == offsetGamma ||
+                         modelParams[t->relParts[0]].treeAgePr.prior == truncatedNormal ||
+                        modelParams[t->relParts[0]].treeAgePr.prior == offsetLogNormal)
+                    {
+                    if (treeAge < modelParams[t->relParts[0]].treeAgePr.priorParams[0])
+                        {    
+                        MrBayesPrint("%s   ERROR: The clock rate is inconsistent with the specified tree age prior.\n", spacer);
+                        return (ERROR);
+                        }
                     }
                 }
             }
@@ -3264,8 +3313,8 @@ int DoLsetParm (char *parmName, char *tkn)
                             else
                                 MrBayesPrint ("%s   Setting Nucmodel to %s for partition %d\n", spacer, modelParams[i].nucModel, i+1);
                             }
-
-                        }                     if (tempInt == YES)
+                        }                     
+                    if (tempInt == YES)
                         MrBayesPrint ("%s   Set state frequency prior to default\n", spacer);
                     }
                 else
@@ -5040,9 +5089,10 @@ int DoPrsetParm (char *parmName, char *tkn)
                                     return (ERROR);
                                     }
                                 if (nApplied == 0 && numCurrentDivisions == 1)
-                                    MrBayesPrint ("%s   Setting ReadErrPr to Uniform(%1.2lf,%1.2lf)\n", spacer, modelParams[i].readErrUni[0], modelParams[i].readErrUni[1]);
+                                    MrBayesPrint ("%s   Setting ReadErrPr to Uniform(%1.5lf,%1.5lf)\n", spacer, modelParams[i].readErrUni[0], modelParams[i].readErrUni[1]);
                                 else
-                                    MrBayesPrint ("%s   Setting ReadErrPr to Uniform(%1.2lf,%1.2lf) for partition %d\n", spacer, modelParams[i].readErrUni[0], modelParams[i].readErrUni[1], i+1);
+                                    MrBayesPrint ("%s   Setting ReadErrPr to Uniform(%1.5lf,%1.5lf) for partition %d\n", spacer, modelParams[i].readErrUni[0], modelParams[i].readErrUni[1], i+1);
+                                modelSettings[i].useReadErr=1;
                                 expecting  = Expecting(RIGHTPAR);
                                 }
                             }
@@ -5056,9 +5106,10 @@ int DoPrsetParm (char *parmName, char *tkn)
                                 }
                             modelParams[i].readErrFix = tempD;
                             if (nApplied == 0 && numCurrentDivisions == 1)
-                                MrBayesPrint ("%s   Setting ReadErrPr to Fixed(%1.2lf)\n", spacer, modelParams[i].readErrFix);
+                                MrBayesPrint ("%s   Setting ReadErrPr to Fixed(%1.5lf)\n", spacer, modelParams[i].readErrFix);
                             else
-                                MrBayesPrint ("%s   Setting ReadErrPr to Fixed(%1.2lf) for partition %d\n", spacer, modelParams[i].readErrFix, i+1);
+                                MrBayesPrint ("%s   Setting ReadErrPr to Fixed(%1.5lf) for partition %d\n", spacer, modelParams[i].readErrFix, i+1);
+                            modelSettings[i].useReadErr=1;
                             expecting  = Expecting(RIGHTPAR);
                             }
                         }
@@ -11030,10 +11081,11 @@ int DoStartvalsParm (char *parmName, char *tkn)
                             }
                         if (theTree->isClock == YES && modelParams[theTree->relParts[0]].treeAgePr.prior == fixed)
                             {
-                            if (!strcmp(modelParams[theTree->relParts[0]].clockPr,"Uniform") ||
-                                !strcmp(modelParams[theTree->relParts[0]].clockPr,"Birthdeath") ||
-                                !strcmp(modelParams[theTree->relParts[0]].clockPr,"Fossilization"))
-                                ResetRootHeight (theTree, modelParams[theTree->relParts[0]].treeAgePr.priorParams[0]);
+                            // if (!strcmp(modelParams[theTree->relParts[0]].clockPr,"Uniform") ||
+                            //    !strcmp(modelParams[theTree->relParts[0]].clockPr,"Birthdeath") ||
+                            //    !strcmp(modelParams[theTree->relParts[0]].clockPr,"Fossilization"));
+                            // We cannot check the consistency of root age and clock rate here because they can be set in any order.
+                            // Defer this check to the CheckModel fxn, called just before starting the chain.
                             }
                         /* the test will find suitable clock rate and ages of nodes in theTree */
                         if (theTree->isClock == YES && IsClockSatisfied (theTree,0.001) == NO)
@@ -11692,6 +11744,7 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                 else if (p->paramId == TRATIO_FIX)
                     value[0] = mp->tRatioFix;
                 }
+
             /* Fill in dimethyl rates **********************************************************************************/
             else if (p->paramType == P_DIMETHYLRATES)
                 {
