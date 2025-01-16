@@ -10766,11 +10766,11 @@ int UpDateCijk (int whichPart, int whichChain)
                         if (SetNucQMatrix (q[k], n, whichChain, whichPart, rateOmegaValues[k], &rA, &rS) == ERROR)
                             goto errorExit;
                         }
-                    else if (m->dataType == DIMETHYL)
-                        { 
-                        if (SetDimethylQMatrix (q[k], n, whichChain, whichPart) == ERROR)
-                            goto errorExit;
-                        }
+            //        else if (m->dataType == DIMETHYL)
+            //            { 
+            //            if (SetDimethylQMatrix (q[k], n, whichChain, whichPart) == ERROR)
+            //                goto errorExit;
+            //            }
                     else
                         {
                         if (SetProteinQMatrix (q[k], n, whichChain, whichPart, rateOmegaValues[k]) == ERROR)
