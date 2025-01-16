@@ -14146,9 +14146,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     if (modelParams[part2].dataType == PROTEIN || ((modelParams[part2].dataType == DNA || modelParams[part2].dataType == RNA) && !strcmp(modelParams[part2].nucModel,"Protein")))
         isSecondProtein = YES;      
     isFirstMethyl = isSecondMethyl = NO;
-    if (modelParams[part1].dataType == DIMETHYL && !strcmp(modelParams[part1].nucModel,"Dimethyl"))
+    if (modelParams[part1].dataType == DIMETHYL)
         isFirstMethyl = YES;
-    if (modelParams[part2].dataType == DIMETHYL && !strcmp(modelParams[part2].nucModel,"Dimethyl"))
+    if (modelParams[part2].dataType == DIMETHYL)
         isSecondMethyl = YES;      
     
     if (whichParam == P_TRATIO)
@@ -16313,8 +16313,10 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                         isSame = NO;
                 }
             else 
-                    isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
+                isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
             }
+        if ((*isApplic1) == NO || (*isApplic2) == NO)
+            isSame = NO;
         }
     else if (whichParam == P_READERRRATE)
         {
@@ -16357,6 +16359,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             else 
                     isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
             }
+        if ((*isApplic1) == NO || (*isApplic2) == NO)
+            isSame = NO;
+
         }
 
 
