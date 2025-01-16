@@ -22,10 +22,10 @@ Saimiri_sciureus    AAGCTTCACCGGCGCAATGAACCTAATAATCGCTCACGGGTTTACTTCGGGGGGGCTATT
     ;
 end;
 
-begin mrbayes;
-    lset nst=6 nucmodel=4by4;
-    prset shapepr=exponential(1);
-    mcmc ngen=20000 samplefreq=1000 burnin=1000;
-    sump;
-    sumt;
-end;
+
+
+
+
+
+
+
