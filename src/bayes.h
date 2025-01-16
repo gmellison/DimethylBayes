@@ -1053,6 +1053,7 @@ typedef struct model
     char        readErrPr[100];
     MrBFlt      readErrFix;
     MrBFlt      readErrUni[2];
+    int         useReadErr;
 
     char        omegaPr[100];      /* prior for omega                              */
     MrBFlt      omegaFix;
@@ -1297,7 +1298,6 @@ typedef struct modelinfo
 
     Param       *dimethylRate;
     Param       *readErrRate;
-    int         useReadErr;
 
     Param       *mixtureRates;              /* ptr to site rate mixture used in model   */
     Param       *shape;                     /* ptr to shape used in model               */
@@ -1424,6 +1424,7 @@ typedef struct modelinfo
     CLFlt       **readErrCls;
     int         **readErrClIndex;
     int         *readErrClScratchIndex;      /* index to scratch space for node cond likes   */
+    int         useReadErr;
 
     /* Likelihood function pointers */
     LikeDownFxn         CondLikeDown;       /* function for calculating partials            */

@@ -10893,7 +10893,6 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
     int             c, h, i, j, k, shortCut, *lState=NULL, *rState=NULL;
     CLFlt           *clL, *clR, *clP, *pL, *pR, *tiPL, *tiPR;
     ModelInfo       *m;
-    double          rER;
 
     m = &modelSettings[division];
 
@@ -10909,8 +10908,6 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
 
-    rER=*GetParamVals (m->readErrRate, chain, state[chain]);
-
     /* find likelihoods of site patterns for left branch if terminal */
     shortCut = 0;
 #   if !defined (DEBUG_NOSHORTCUTS)
@@ -10920,7 +10917,7 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         lState = m->termState[p->left->index];
         tiPL = pL;
 
-        if (rER > 0) 
+        if (m->useReadErr) 
             tiPL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
 
         for (k=j=0; k<m->numRateCats; k++)
@@ -10945,12 +10942,12 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         shortCut |= 2;
         rState = m->termState[p->right->index];
 
-        if (rER > 0) 
+        if (m->useReadErr) 
             tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
 
         tiPR = pR;
 
-        if (rER > 0) 
+        if (m->useReadErr) 
             tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
 
         for (k=j=0; k<m->numRateCats; k++)
@@ -13022,11 +13019,10 @@ int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
  
     // if left/right node are tips, calc probabilities 
     // by summing over the read error probabilities  
-    //
-    if (p->index < numLocalTaxa)
+    if (m->useReadErr) 
         {
         rER=*GetParamVals (m->readErrRate, chain, state[chain]);
-        if (rER > 0) 
+        if (p->index < numLocalTaxa)
             {
             for (i=index=0; i<3; i++)
                 {
