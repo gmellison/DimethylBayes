@@ -5632,8 +5632,8 @@ void FlipCondLikeSpace (ModelInfo* m, int chain, int nodeIndex)
     m->condLikeIndex[chain][nodeIndex] = m->condLikeScratchIndex[nodeIndex];
     m->condLikeScratchIndex[nodeIndex] = temp;
 
-    if (m->useReadErr && nodeIndex < numLocalTaxa)
-        FlipReadErrClSpace(m,chain,nodeIndex);
+    //if (m->useReadErr && nodeIndex < numLocalTaxa)
+    //    FlipReadErrClSpace(m,chain,nodeIndex);
 }
 
 /* FlipReadErrClSpace: Flip space for conditional likelihoods with scratch area */
@@ -5693,6 +5693,10 @@ void FlipTiProbsSpace (ModelInfo* m, int chain, int nodeIndex)
     temp                              = m->tiProbsIndex[chain][nodeIndex];
     m->tiProbsIndex[chain][nodeIndex] = m->tiProbsScratchIndex[nodeIndex];
     m->tiProbsScratchIndex[nodeIndex] = temp;
+
+    if (m->useReadErr && nodeIndex < numLocalTaxa)
+        FlipReadErrClSpace(m,chain,nodeIndex);
+
 }
 
 
