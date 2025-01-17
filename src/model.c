@@ -5092,7 +5092,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                                     MrBayesPrint ("%s   Setting ReadErrPr to Uniform(%1.5lf,%1.5lf)\n", spacer, modelParams[i].readErrUni[0], modelParams[i].readErrUni[1]);
                                 else
                                     MrBayesPrint ("%s   Setting ReadErrPr to Uniform(%1.5lf,%1.5lf) for partition %d\n", spacer, modelParams[i].readErrUni[0], modelParams[i].readErrUni[1], i+1);
-                                modelParams[i].useReadErr=1;
+                                modelParams[i].useReadErr=YES;
                                 expecting  = Expecting(RIGHTPAR);
                                 }
                             }
@@ -5109,7 +5109,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                                 MrBayesPrint ("%s   Setting ReadErrPr to Fixed(%1.5lf)\n", spacer, modelParams[i].readErrFix);
                             else
                                 MrBayesPrint ("%s   Setting ReadErrPr to Fixed(%1.5lf) for partition %d\n", spacer, modelParams[i].readErrFix, i+1);
-                            modelParams[i].useReadErr=1;
+                            modelParams[i].useReadErr=YES;
                             expecting  = Expecting(RIGHTPAR);
                             }
                         }
@@ -19066,6 +19066,7 @@ int SetModelInfo (void)
         /*  dimethyl parms */
         m->dimethylRate=NULL;
         m->readErrRate=NULL;
+        m->useReadErr=NO;
 
         m->CondLikeDown = NULL;
         m->CondLikeRoot = NULL;
