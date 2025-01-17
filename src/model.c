@@ -5092,7 +5092,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                                     MrBayesPrint ("%s   Setting ReadErrPr to Uniform(%1.5lf,%1.5lf)\n", spacer, modelParams[i].readErrUni[0], modelParams[i].readErrUni[1]);
                                 else
                                     MrBayesPrint ("%s   Setting ReadErrPr to Uniform(%1.5lf,%1.5lf) for partition %d\n", spacer, modelParams[i].readErrUni[0], modelParams[i].readErrUni[1], i+1);
-                                modelSettings[i].useReadErr=1;
+                                modelParams[i].useReadErr=1;
                                 expecting  = Expecting(RIGHTPAR);
                                 }
                             }
@@ -5109,7 +5109,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                                 MrBayesPrint ("%s   Setting ReadErrPr to Fixed(%1.5lf)\n", spacer, modelParams[i].readErrFix);
                             else
                                 MrBayesPrint ("%s   Setting ReadErrPr to Fixed(%1.5lf) for partition %d\n", spacer, modelParams[i].readErrFix, i+1);
-                            modelSettings[i].useReadErr=1;
+                            modelParams[i].useReadErr=1;
                             expecting  = Expecting(RIGHTPAR);
                             }
                         }
@@ -14146,9 +14146,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
     if (modelParams[part2].dataType == PROTEIN || ((modelParams[part2].dataType == DNA || modelParams[part2].dataType == RNA) && !strcmp(modelParams[part2].nucModel,"Protein")))
         isSecondProtein = YES;      
     isFirstMethyl = isSecondMethyl = NO;
-    if (modelParams[part1].dataType == DIMETHYL && !strcmp(modelParams[part1].nucModel,"Dimethyl"))
+    if (modelParams[part1].dataType == DIMETHYL)
         isFirstMethyl = YES;
-    if (modelParams[part2].dataType == DIMETHYL && !strcmp(modelParams[part2].nucModel,"Dimethyl"))
+    if (modelParams[part2].dataType == DIMETHYL)
         isSecondMethyl = YES;      
     
     if (whichParam == P_TRATIO)
@@ -16313,8 +16313,10 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
                         isSame = NO;
                 }
             else 
-                    isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
+                isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
             }
+        if ((*isApplic1) == NO || (*isApplic2) == NO)
+            isSame = NO;
         }
     else if (whichParam == P_READERRRATE)
         {
@@ -16323,6 +16325,12 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             *isApplic1 = NO; /* part1 has a parsimony model and GTR rates do not apply */
         if (!strcmp(modelParams[part2].parsModel, "Yes"))
             *isApplic2 = NO; /* part2 has a parsimony model and GTR rates do not apply */
+
+        /*  check if we're using readErr parm */
+        if (modelParams[part1].useReadErr == NO)
+            *isApplic1 = NO; 
+        if (modelParams[part2].useReadErr == NO)
+            *isApplic2 = NO; 
 
         /* Check that the data are methyl for both partitions 1 and 2 */
         if (isFirstMethyl == NO)
@@ -16351,6 +16359,9 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
             else 
                     isSame = NO; /* the priors are not the same, so we cannot set the parameter to be equal for both partitions */
             }
+        if ((*isApplic1) == NO || (*isApplic2) == NO)
+            isSame = NO;
+
         }
 
 
@@ -19052,6 +19063,10 @@ int SetModelInfo (void)
         m->mixedBrchRates = NULL;
         m->clockRate = NULL;
 
+        /*  dimethyl parms */
+        m->dimethylRate=NULL;
+        m->readErrRate=NULL;
+
         m->CondLikeDown = NULL;
         m->CondLikeRoot = NULL;
         m->CondLikeScaler = NULL;
@@ -19143,6 +19158,12 @@ int SetModelInfo (void)
         m->nCijkParts = 0;
         m->cijkIndex = NULL;
         m->cijkScratchIndex = -1;
+
+        m->readErrClLength=0;
+        m->numReadErrCls=0;
+        m->readErrCls=NULL;
+        m->readErrClIndex=NULL;
+        m->readErrClScratchIndex=NULL;      
 
         }
 
@@ -19358,6 +19379,8 @@ int SetModelInfo (void)
             ts=m->numModelStates;
             m->cijkLength=(ts*ts*ts) + (2*ts);
             m->nCijkParts=m->numRateCats;
+            if (mp->useReadErr) 
+                m->useReadErr=YES;
             }
 
         /* check if we should calculate ancestral states */
@@ -19800,7 +19823,6 @@ int SetModelParams (void)
             sprintf (temp, "readErrRate");
             SafeStrcat (&p->paramHeader, temp);
             SafeStrcat (&p->paramHeader, partString);
-
             }
 
 
@@ -24108,7 +24130,7 @@ void SetUpMoveTypes (void)
     mt->Autotune = &AutotuneSlider;
     mt->targetRate = 0.25;
 
-    /* Move_Pinvar */
+    /* Move_readerr */
     mt = &moveTypes[i++];
     mt->name = "Sliding window";
     mt->shortName = "Slider";

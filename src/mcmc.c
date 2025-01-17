@@ -17008,33 +17008,40 @@ int RunChain (RandLong *seed)
                     r = exp(lnLikelihoodRatio + lnPriorRatio + lnProposalRatio);
                 }
 
-                /* decide to accept or reject the move */
-                acceptMove = NO;
-                i = chainId[chn];
-                theMove->nTried[i]++;
-                theMove->nTotTried[i]++;
-                if (abortMove == NO && RandomNumber(seed) < r)
-                    {
-                    acceptMove = YES;
-                    theMove->nAccepted[i]++;
-                    theMove->nTotAccepted[i]++;
-                    }
+            /* decide to accept or reject the move */
+            acceptMove = NO;
+            i = chainId[chn];
+            theMove->nTried[i]++;
+            theMove->nTotTried[i]++;
+            if (abortMove == NO && RandomNumber(seed) < r)
+                {
+                acceptMove = YES;
+                theMove->nAccepted[i]++;
+                theMove->nTotAccepted[i]++;
+                }
 
-                /* update the chain */
-                if (acceptMove == NO)
+            /* update the chain */
+            if (acceptMove == NO)
+                {
+                /* the new state did not work out so shift chain back */
+                if (abortMove == NO)
+                    ResetFlips(chn);
+                state[chn] ^= 1;
+#   if defined (BEAGLE_ENABLED)
+                if (recalcScalers == YES)
                     {
-                    /* the new state did not work out so shift chain back */
-                    if (abortMove == NO)
-                        ResetFlips(chn);
-                    state[chn] ^= 1;
+                    recalculateScalers(chn);
+                    recalcScalers = NO;
                     }
-                else
-                    {
-                    /* if the move is accepted then let the chain stay in the new state */
-                    /* store the likelihood and prior of the chain */
-                    curLnL[chn] = lnLike;
-                    curLnPr[chn] = lnPrior;
-                    }
+#   endif
+                }
+            else
+                {
+                /* if the move is accepted then let the chain stay in the new state */
+                /* store the likelihood and prior of the chain */
+                curLnL[chn] = lnLike;
+                curLnPr[chn] = lnPrior;
+                }
                  
             /* check if time to autotune */
             if (theMove->nTried[i] >= chainParams.tuneFreq)
