@@ -5694,9 +5694,6 @@ void FlipTiProbsSpace (ModelInfo* m, int chain, int nodeIndex)
     m->tiProbsIndex[chain][nodeIndex] = m->tiProbsScratchIndex[nodeIndex];
     m->tiProbsScratchIndex[nodeIndex] = temp;
 
-    if (m->useReadErr && nodeIndex < numLocalTaxa)
-        FlipReadErrClSpace(m,chain,nodeIndex);
-
 }
 
 
@@ -7914,16 +7911,20 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
                 {
                 /* shift state of ti probs for node */
                 FlipTiProbsSpace (m, chain, p->left->index);
+                if (m->useReadErr == YES && p->left->index < numLocalTaxa)
+                    FlipReadErrClSpace(m, chain, p->left->index);
                 m->TiProbs (p->left, d, chain);
                 }
-            
+
             if (p->right->upDateTi == YES)
                 {
                 /* shift state of ti probs for node */
+                if (m->useReadErr == YES && p->right->index < numLocalTaxa)
+                    FlipReadErrClSpace(m, chain, p->right->index);
                 FlipTiProbsSpace (m, chain, p->right->index);
                 m->TiProbs (p->right, d, chain);
                 }
-            
+
             if (tree->isRooted == NO)
                 {
                 if (p->anc->anc == NULL /* && p->upDateTi == YES */)
@@ -13025,20 +13026,21 @@ int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
     // by summing over the read error probabilities  
     if (m->useReadErr) 
         {
+
         rER=*GetParamVals (m->readErrRate, chain, state[chain]);
+        for (i=index=0; i<3; i++)
+            {
+            for (j=0; j<3; j++)
+               {
+               if (j==i) 
+                   readErrProbs[index++]=(1 - 2.0*rER);
+               else 
+                   readErrProbs[index++]=rER;
+               }
+           }
+
         if (p->index < numLocalTaxa)
             {
-            for (i=index=0; i<3; i++)
-                {
-                for (j=0; j<3; j++)
-                   {
-                   if (j==i) 
-                       readErrProbs[index++]=(1 - 2.0*rER);
-                   else 
-                       readErrProbs[index++]=rER;
-                   }
-               }
-
             rECL=m->readErrCls[m->readErrClIndex[chain][p->index]];
 
             /*  reset...  */

@@ -15865,8 +15865,13 @@ void ResetFlips (int chain)
         for (i=0; i<tree->nNodes; i++)
             {
             p = tree->allDownPass[i];
+
+            if (m->useReadErr && p->index<numLocalTaxa && p->upDateTi==YES)
+                FlipReadErrClSpace(m,chain,p->index);
+
             if (p->upDateTi == YES)
                 FlipTiProbsSpace (m, chain, p->index);
+
             if (p->right != NULL)    /* do not flip terminals in case these flags are inappropriately set by moves */
                 {
                 if (p->upDateCl == YES)
