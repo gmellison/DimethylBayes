@@ -13026,21 +13026,21 @@ int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
     // by summing over the read error probabilities  
     if (m->useReadErr) 
         {
-
-        rER=*GetParamVals (m->readErrRate, chain, state[chain]);
-        for (i=index=0; i<3; i++)
-            {
-            for (j=0; j<3; j++)
-               {
-               if (j==i) 
-                   readErrProbs[index++]=(1 - 2.0*rER);
-               else 
-                   readErrProbs[index++]=rER;
-               }
-           }
-
         if (p->index < numLocalTaxa)
             {
+
+            rER=*GetParamVals (m->readErrRate, chain, state[chain]);
+            for (i=index=0; i<3; i++)
+                {
+                for (j=0; j<3; j++)
+                   {
+                   if (j==i) 
+                       readErrProbs[index++]=(1 - 2.0*rER);
+                   else 
+                       readErrProbs[index++]=rER;
+                   }
+               }
+
             rECL=m->readErrCls[m->readErrClIndex[chain][p->index]];
 
             /*  reset...  */

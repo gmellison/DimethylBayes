@@ -24151,7 +24151,6 @@ void SetUpMoveTypes (void)
     mt->targetRate = 0.25;
 
 
-
     numMoveTypes = i;
     
     assert(numMoveTypes < NUM_MOVE_TYPES);
