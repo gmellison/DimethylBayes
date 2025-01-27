@@ -67,6 +67,19 @@ nsim <- 400
 ages <- c(20,100)
 
 numruns <- nsim * length(crs) * length(sites) * length(taxa) * length(ages)
+ 
+#pdf("../plots/like_examp.pdf")
+#par(mfrow=c(1,1))
+#plot(tree, type="clad", direction="downwards", srt=90, show.tip.label=FALSE)
+#nodelabels(c(expression("w"[1]), 
+#             expression("w"[2]), 
+#             expression("w"[3])), frame="none", adj=c(0,2.5))
+#tiplabels(c(expression("x"[1]*"=1"), 
+#             expression("x"[2]*"=1"), 
+#             expression("x"[3]*"=0"),
+#             expression("x"[4]*"=0")), #frame="none", 
+#          bg="grey", adj=c(0.5,1))
+#dev.off()
 
 s <- 1
 recook <- FALSE  

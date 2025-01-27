@@ -40196,12 +40196,12 @@ end;
 
 begin mrbayes;
 log start filename=R_1_sc.log;
-exclude 10001-175846;
+exclude 1001-175846;
 prset brlenspr=clock:uniform;
 prset clockratepr=normal(0.1,0.1);
 prset treeagepr=fixed(17);
 lset rates=gamma;
-[prset readerrpr=fixed(0.0009);]
+prset readerrpr=fixed(0.0009);
 [report siterates=yes;]
 mcmcp checkpoint=yes checkfreq=50000 append=yes ;
 mcmc ngen=500000 samplefreq=1000 burnin=10000 nchains=2 nruns=1;
