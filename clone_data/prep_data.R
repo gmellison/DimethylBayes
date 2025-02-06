@@ -17,7 +17,7 @@ stop_crit <- FALSE
 append <- "no"
 
 if (!dir.exists(out_dir)) dir.create(out_dir)
-clone <- "R"
+
 clones <- c("G", "R")
 for (clone in clones) {
     parts <- list.files(sprintf("%s/%s",data_dir,clone), pattern="*.fa")
@@ -30,7 +30,7 @@ for (clone in clones) {
         ntax <- length(fast$name) 
         
         chars <- fast$sq %>%
-            #tidysq::substitute_letters(c("0"="A","1"="C","2"="G")) %>%
+            #tidysq::substitute_letters(c("0"="E","1"="M","2"="D")) %>%
             as.character
     
         nsite <- length(strsplit(chars[1],"")[[1]])
@@ -72,7 +72,7 @@ for (clone in clones) {
     write.csv(summ, sprintf("%s/%s/summary.csv", data_dir,clone))
 
     for (clock in c("","_rc","_sc")) {
-        for (partition in c(1, 5, 10)) {
+        for (partition in c(1, 5)) {
 
             nex_file <- sprintf("%s_%s_%s.nex", clone, partition, clock)
             nex_file <- str_replace(nex_file, "__", "_") 
@@ -234,7 +234,7 @@ for (clone in clones) {
 fc <- file(sprintf("%s/files.lst", out_dir),"w")
 for (clone in clones) {
     for (clock in c("","_rc","_sc")) {
-        for (partition in c(1,5,10)) {
+        for (partition in c(1,5)) {
             out_file <- sprintf("%s_%s_%s.nex", clone, partition, clock)
             out_file <- str_replace(out_file, "__", "_") 
             out_file <- str_replace(out_file, "_\\.", "\\.") 
@@ -248,7 +248,7 @@ close(fc)
 fc <- file(sprintf("%s/files_sum.lst", out_dir),"w")
 for (clone in clones) {
     for (clock in c("","_rc","_sc")) {
-        for (partition in c(1,5,10)) {
+        for (partition in c(1,5)) {
             out_file <- sprintf("sum_%s_%s_%s.nex", clone, partition, clock)
             out_file <- str_replace(out_file, "__", "_") 
             out_file <- str_replace(out_file, "_\\.", "\\.") 
@@ -260,13 +260,13 @@ close(fc)
 
 cluster_dir <- "dim"
 jobs <- list( list(job_name="dim", 
-                   num_files=18,
+                   num_files=12,
                    files_list="files.lst",
                    sub_file="sub_all.sh",
                    run_dir="${SLURM_JOB_NAME}"), 
 
               list(job_name="dim_sum",
-                   num_files=18,
+                   num_files=12,
                    files_list="files_sum.lst",
                    sub_file="sum_all.sh",
                    run_dir="dim") )

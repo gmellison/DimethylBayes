@@ -11086,7 +11086,7 @@ int CondLikeDown_Dimethyl_FMA (TreeNode *p, int division, int chain)
     /* find transition probabilities */
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
-   
+
 //    if (m->useReadErr && p->left->index<numLocalTaxa) 
 //        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
 //
@@ -11197,8 +11197,6 @@ int CondLikeDown_Dimethyl_AVX (TreeNode *p, int division, int chain)
 //
 //    if (m->useReadErr && p->right->index<numLocalTaxa) 
 //        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
-
-
     tiPL = pL;
     tiPR = pR;
     for (k=0; k<m->numRateCats; k++)
@@ -11429,13 +11427,6 @@ int CondLikeRoot_Dimethyl_FMA (TreeNode *p, int division, int chain)
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
     pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
     
-    if (m->useReadErr && p->left->index<numLocalTaxa) 
-        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-
-    if (m->useReadErr && p->right->index<numLocalTaxa) 
-        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
-
-
     tiPL = pL;
     tiPR = pR;
     tiPA = pA;
@@ -11561,13 +11552,6 @@ int CondLikeRoot_Dimethyl_AVX (TreeNode *p, int division, int chain)
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
     pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
     
-    if (m->useReadErr && p->left->index<numLocalTaxa) 
-        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-
-    if (m->useReadErr && p->right->index<numLocalTaxa) 
-        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
-
-
     tiPL = pL;
     tiPR = pR;
     tiPA = pA;
@@ -11709,12 +11693,6 @@ int CondLikeRoot_Dimethyl_SSE (TreeNode *p, int division, int chain)
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
     pA = m->tiProbs[m->tiProbsIndex[chain][p->index       ]];
-
-    if (m->useReadErr && p->left->index<numLocalTaxa) 
-        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-
-    if (m->useReadErr && p->right->index<numLocalTaxa) 
-        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
 
     tiPL = pL;
     tiPR = pR;
