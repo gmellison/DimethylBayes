@@ -7913,6 +7913,7 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
                 FlipTiProbsSpace (m, chain, p->left->index);
                 if (m->useReadErr == YES && p->left->index < numLocalTaxa)
                     FlipReadErrClSpace(m, chain, p->left->index);
+
                 m->TiProbs (p->left, d, chain);
                 }
 
@@ -7921,6 +7922,7 @@ void LaunchLogLikeForDivision(int chain, int d, MrBFlt* lnL)
                 /* shift state of ti probs for node */
                 if (m->useReadErr == YES && p->right->index < numLocalTaxa)
                     FlipReadErrClSpace(m, chain, p->right->index);
+
                 FlipTiProbsSpace (m, chain, p->right->index);
                 m->TiProbs (p->right, d, chain);
                 }
@@ -10922,8 +10924,8 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         lState = m->termState[p->left->index];
         tiPL = pL;
 
-        if (m->useReadErr) 
-            tiPL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
+//        if (m->useReadErr) 
+//            tiPL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
 
         for (k=j=0; k<m->numRateCats; k++)
             {
@@ -10947,13 +10949,10 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
         shortCut |= 2;
         rState = m->termState[p->right->index];
 
-        if (m->useReadErr) 
-            tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
-
         tiPR = pR;
 
-        if (m->useReadErr) 
-            tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
+        //if (m->useReadErr) 
+        //    tiPR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
 
         for (k=j=0; k<m->numRateCats; k++)
             {
@@ -11088,11 +11087,11 @@ int CondLikeDown_Dimethyl_FMA (TreeNode *p, int division, int chain)
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
    
-    if (m->useReadErr && p->left->index<numLocalTaxa) 
-        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-
-    if (m->useReadErr && p->right->index<numLocalTaxa) 
-        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
+//    if (m->useReadErr && p->left->index<numLocalTaxa) 
+//        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
+//
+//    if (m->useReadErr && p->right->index<numLocalTaxa) 
+//        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
 
     tiPL = pL;
     tiPR = pR;
@@ -11193,11 +11192,11 @@ int CondLikeDown_Dimethyl_AVX (TreeNode *p, int division, int chain)
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
     
-    if (m->useReadErr && p->left->index<numLocalTaxa) 
-        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-
-    if (m->useReadErr && p->right->index<numLocalTaxa) 
-        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
+//    if (m->useReadErr && p->left->index<numLocalTaxa) 
+//        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
+//
+//    if (m->useReadErr && p->right->index<numLocalTaxa) 
+//        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
 
 
     tiPL = pL;
@@ -11311,11 +11310,11 @@ int CondLikeDown_Dimethyl_SSE (TreeNode *p, int division, int chain)
     pL = m->tiProbs[m->tiProbsIndex[chain][p->left->index ]];
     pR = m->tiProbs[m->tiProbsIndex[chain][p->right->index]];
  
-    if (m->useReadErr && p->left->index<numLocalTaxa) 
-        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
-
-    if (m->useReadErr && p->right->index<numLocalTaxa) 
-        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
+//    if (m->useReadErr && p->left->index<numLocalTaxa) 
+//        pL = m->readErrCls[m->readErrClIndex[chain][p->left->index ]];
+//
+//    if (m->useReadErr && p->right->index<numLocalTaxa) 
+//        pR = m->readErrCls[m->readErrClIndex[chain][p->right->index ]];
 
     tiPL = pL;
     tiPR = pR;
@@ -13101,9 +13100,10 @@ int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
                     }
                 tipIndex+=9;
                 }
+            tiP = rECL;
             }
         }
-                                                                           
+
     return (NO_ERROR);
 }
 

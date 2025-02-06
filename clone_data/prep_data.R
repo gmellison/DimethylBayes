@@ -6,13 +6,15 @@ options(scipen=999)
 data_dir <- "."
 out_dir <- "sapelo"
 
-nreps <- 1000000
-burnin <- 500000
+nreps <- 4000000
+burnin <- 3000000
 subset_data <- FALSE 
-sites_include <- 80000
-nchains <- 24  # per run, 2 runs by default
-nswaps <- 8
-temp <- 0.03
+sites_include <- 20000
+nchains <- 16  # per run, 2 runs by default
+nswaps <- 4
+temp <- 0.001
+stop_crit <- FALSE 
+append <- "no"
 
 if (!dir.exists(out_dir)) dir.create(out_dir)
 clone <- "R"
@@ -162,7 +164,7 @@ for (clone in clones) {
             if (partition > 1) {
                 partition_set <- "set partition=mrate_part;"
                 unlink_lines <- c("unlink dimethylrate=(all);", 
-                                  "prset applyto=(all) ratepr=variable;")
+                                  "[prset applyto=(all) ratepr=variable;]")
 
             } else {
                 partition_set <- ""
@@ -177,15 +179,16 @@ for (clone in clones) {
                clock_rate_lines,
                tree_age_lines,
                "lset rates=gamma;",
-               "prset readerrpr=fixed(0.0009);",
+               "prset readerrpr=fixed(0.001);",
                unlink_lines, 
                "[report siterates=yes;]",
                sprintf("mcmcp temp=%s nswaps=%s; ", temp, nswaps),
-               "mcmcp checkpoint=yes checkfreq=20000 append=yes ;",
-               sprintf("mcmc ngen=%s samplefreq=1000 burnin=%s nchains=%s;", nreps, burnin, nchains),
-               sprintf("log stop filename=%s;",log_file),
+               sprintf("mcmcp checkpoint=yes checkfreq=100000 append=%s ;",append),
+               ifelse (stop_crit, "mcmcp stoprule=yes stopval=0.0001 ;", ""),
+               sprintf("mcmc ngen=%s samplefreq=1000 burnin=%s nchains=%s ;", nreps, burnin, nchains),
                "sump;",
                "sumt;",
+               sprintf("log stop filename=%s;",log_file),
                "end;")
             writeLines(con=fc, mod_mcmc_lines[mod_mcmc_lines!=""])
             close(fc)
