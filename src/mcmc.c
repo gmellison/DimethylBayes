@@ -18429,13 +18429,13 @@ int SetLikeFunctions (void)
                 {
 #    if defined (SSE_ENABLED)  
                 m->useVec = VEC_SSE;
-                m->numFloatsPerVec = 3;
+                m->numFloatsPerVec = 4;
                 m->CondLikeDown = &CondLikeDown_Dimethyl_SSE;
                 m->CondLikeRoot = &CondLikeRoot_Dimethyl_SSE;
                 m->CondLikeScaler = &CondLikeScaler_Dimethyl_SSE;
 #if defined (AVX_ENABLED)   // override SSE settings
                 m->useVec = VEC_AVX;
-                m->numFloatsPerVec = 6;
+                m->numFloatsPerVec = 8;
                 m->CondLikeDown = &CondLikeDown_Dimethyl_AVX;
                 m->CondLikeRoot = &CondLikeRoot_Dimethyl_AVX;
                 m->CondLikeScaler = &CondLikeScaler_Dimethyl_AVX;
