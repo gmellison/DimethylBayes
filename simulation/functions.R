@@ -1,5 +1,5 @@
-seqgen_path <- "~/Lib/SeqGen/source/seq-gen"
-mrb_path <- "../mb"
+seqgen_path <- "~/apps/Seq-Gen/source/seq-gen"
+mrb_path <- "./mb"
 
 sim_alignment <- function(tree, a, b, n_site, al, dg=0, readerr=0) {
   
@@ -161,8 +161,8 @@ setup_mrb <- function(aln_str,
                  "begin mrbayes;",
                  model_lines,
                  mcmc_lines,
-                 sprintf("sump outputname=%s/sump.%s;",out_dir,fname),
-                 sprintf("sumt outputname=%s/sumt.%s conformat=simple;",out_dir,fname),
+                 sprintf("sump outputname=%s/sump.%s burninfrac=%s;",out_dir,fname,burninfrac),
+                 sprintf("sumt outputname=%s/sumt.%s burninfrac=%s conformat=simple;",out_dir,fname,burninfrac),
 
                  # sprintf("comparetree outputname=treecomp"),
                  #         "filename1=tree.summ.con.tre filename2=sim.tree.nex;",
@@ -225,10 +225,17 @@ get_compute_time <- function(out_fname) {
     # get compute time 
     l <- readLines(out_fname)
     time_line <- l[grepl("Analysis used", l)]
-    min_sec <- as.numeric(stringr::str_extract_all(time_line, "[1-9\\.]+")[[1]])
+    if (length(time_line) == 0) {
+            print(out_fname)
+            return(NA)
+    }
+    #min_sec <- try(as.numeric(stringr::str_extract_all(time_line, "[1-9\\.]+")[[1]]))
+    min_sec <- try(regmatches(time_line, gregexpr("[[:digit:]]+(\\.[[:digit:]]+)?", time_line)))
+    if (inherits(min_sec, "try_error")) return(NA) 
+    else min_sec <- unlist(min_sec)
     mins <- ifelse(length(min_sec) > 1, min_sec[1], 0)
     secs <- ifelse(length(min_sec) > 1, min_sec[2], min_sec)
-    sec <- mins*60 + secs
+    sec <- try(as.numeric(mins)*60 + as.numeric(secs))
     return(sec)
 }
 
