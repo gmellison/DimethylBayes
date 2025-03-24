@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([MrBayes],[3.2.7a])
+AC_INIT([DimethylBayes],[1.0.0])
 
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_MACRO_DIRS([autotools])
@@ -74,12 +74,12 @@ AC_ARG_ENABLE([fma],
 # Optional feature: Enable/disable building of documentation under doc/
 # (enabled by default)
 
-AC_ARG_ENABLE([doc],
-    [AS_HELP_STRING([--enable-doc],
-        [Enable building supplied documentation from sources in doc/
-         @<:@default=yes@:>@])],
-    [enable_doc=$enableval],
-    [enable_doc=yes])
+#AC_ARG_ENABLE([doc],
+#    [AS_HELP_STRING([--enable-doc],
+#        [Enable building supplied documentation from sources in doc/
+#         @<:@default=yes@:>@])],
+#    [enable_doc=$enableval],
+#    [enable_doc=yes])
 
 # Optional external libraries:  MPI, Readline, Beagle
 
@@ -109,23 +109,23 @@ AC_ARG_WITH([beagle],
 AC_PROG_INSTALL
 PKG_PROG_PKG_CONFIG
 
-AM_CONDITIONAL([BUILD_DOC], [test "$enable_doc" = "yes"])
-AM_COND_IF([BUILD_DOC], [
+#AM_CONDITIONAL([BUILD_DOC], [test "$enable_doc" = "yes"])
+#AM_COND_IF([BUILD_DOC], [
+#
+#    # Test whether we can rebuild the documentation.
+#    # This does not affect the pre-built PDF documents unless these are deleted.
+#    AC_PATH_PROG(PDFLATEX, [pdflatex])
+#    AC_PATH_PROG(BIBTEX, [bibtex])
+#    AC_PATH_PROG(LATEXMK, [latexmk])
+#
+#]) dnl AM_COND_IF([BUILD_DOC])
 
-    # Test whether we can rebuild the documentation.
-    # This does not affect the pre-built PDF documents unless these are deleted.
-    AC_PATH_PROG(PDFLATEX, [pdflatex])
-    AC_PATH_PROG(BIBTEX, [bibtex])
-    AC_PATH_PROG(LATEXMK, [latexmk])
-
-]) dnl AM_COND_IF([BUILD_DOC])
-
-AM_CONDITIONAL([HAVE_LATEX], [test -n "$PDFLATEX" && test -n "$BIBTEX"])
-AM_COND_IF([BUILD_DOC], [
-    AM_COND_IF([HAVE_LATEX], [],
-               [AC_MSG_WARN([pdflatex and/or bibtex is missing, documentation will not be rebuilt])])
-])
-AM_CONDITIONAL([HAVE_LATEXMK], [test -n "$LATEXMK"])
+#AM_CONDITIONAL([HAVE_LATEX], [test -n "$PDFLATEX" && test -n "$BIBTEX"])
+#AM_COND_IF([BUILD_DOC], [
+#    AM_COND_IF([HAVE_LATEX], [],
+#               [AC_MSG_WARN([pdflatex and/or bibtex is missing, documentation will not be rebuilt])])
+#])
+#AM_CONDITIONAL([HAVE_LATEXMK], [test -n "$LATEXMK"])
 
 # Determine if we can (and want) to use an MPI C compiler.
 AX_PROG_CC_MPI([test "x$with_mpi" != "xno"],
@@ -279,10 +279,10 @@ AS_IF([test "x$enable_fma" = "xno"],
 AC_CHECK_FUNCS([floor memset pow sqrt strchr])
 
 AC_CONFIG_FILES([Makefile
-                 doc/Makefile
-                 doc/SMME_paper/Makefile
-                 doc/manual/Makefile
-                 examples/Makefile
+                 #doc/Makefile
+                 #doc/SMME_paper/Makefile
+                 #doc/manual/Makefile
+                 #examples/Makefile
                  src/Makefile
                  testing/Makefile
 ])
