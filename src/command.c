@@ -920,59 +920,14 @@ int DoAbout (void)
     MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
     MrBayesPrint ("   About the program                                                             \n");
     MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("   MrBayes is a program for the Bayesian estimation of phylogeny. Bayesian       \n");
-    MrBayesPrint ("   inference of phylogeny is based upon the posterior probability distribution   \n");
-    MrBayesPrint ("   of trees. Trees are labelled T1, T2, ..., Tn, where n is the number of        \n");
-    MrBayesPrint ("   possible trees. The posterior probability of the i-th tree is calculated      \n");
-    MrBayesPrint ("   using Bayes\'s formula as                                                     \n");
-    MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("      Pr[Ti | X] = Pr[X | Ti] X Pr[Ti] / Pr[X]                                   \n");
-    MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("   where X is a character matrix. Here, \"Pr[Ti | X]\" is the posterior          \n");
-    MrBayesPrint ("   probability of the i-th tree, \"Pr[X | Ti]\" is the likelihood of the         \n");
-    MrBayesPrint ("   i-th tree, and \"Pr[Ti]\" is the prior probability of the i-th tree. The      \n");
-    MrBayesPrint ("   denominator of Bayes\'s formula (\"Pr[X]\") is a normalizing constant that    \n");
-    MrBayesPrint ("   involves a summation over all possible trees. The likelihood, as described    \n");
-    MrBayesPrint ("   above, cannot be calculated with knowledge of only the tree\'s topology. You  \n");
-    MrBayesPrint ("   also need to have information on the lengths of the branches and on the       \n");
-    MrBayesPrint ("   mechanism of character change. Hence, the likelihood (\"Pr[X | Ti]\")         \n");
-    MrBayesPrint ("   involves a multidimensional integral over all possible combinations of        \n");
-    MrBayesPrint ("   branch lengths and substitution model parameters.                             \n");
-    MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("   In practice, it is impossible to calculate the posterior probability dist-    \n");
-    MrBayesPrint ("   ribution of trees analytically. Instead, the posterior probability            \n");
-    MrBayesPrint ("   of trees must be approximated. MrBayes uses a method called Markov chain      \n");
-    MrBayesPrint ("   Monte Carlo (MCMC) to approximate the posterior probability of trees.         \n");
-    MrBayesPrint ("   The object of MCMC is to construct a Markov chain that has as its state       \n");
-    MrBayesPrint ("   space the parameters of the phylogenetic model and a stationary distribution  \n");
-    MrBayesPrint ("   that is the posterior probability distribution of trees. MCMC takes valid,    \n");
-    MrBayesPrint ("   albeit dependent, samples from the posterior probability distribution of      \n");
-    MrBayesPrint ("   trees. The fraction of the time any tree appears in this sample is a          \n");
-    MrBayesPrint ("   valid approximation of the posterior probability of the tree. MrBayes keeps   \n");
-    MrBayesPrint ("   track of all the parameters of the phylogenetic model. The trees (with branch \n");
-    MrBayesPrint ("   lengths) that were sampled by the MCMC procedure are saved in one file        \n");
-    MrBayesPrint ("   (a file with a \".t\" extension) whereas the parameters of the model of       \n");
-    MrBayesPrint ("   character change are saved in another file (a file with a \".p\" ext-         \n");
-    MrBayesPrint ("   ension). You can summarize the results in the \".t\" and \".p\" files         \n");
-    MrBayesPrint ("   using the \"sumt\" and \"sump\" commands, respectively.                       \n");
-    MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("   MrBayes was originally written by John Huelsenbeck in August of 2000 and was  \n");
-    MrBayesPrint ("   intended to be distributed to a small number of people. In March of 2001,     \n");
-    MrBayesPrint ("   Fredrik Ronquist started making contributions to the program. The contribu-   \n");
-    MrBayesPrint ("   tions were of such a significant nature that he was made a coauthor of the    \n");
-    MrBayesPrint ("   program. Version 3 of MrBayes was a fully joint effort, started in the summer \n");
-    MrBayesPrint ("   of 2002 when JPH visited Sweden on a grant from the Wenner-Gren Foundations.  \n");
-    MrBayesPrint ("   Several others have contributed to the MrBayes code since then, most notably  \n");
-    MrBayesPrint ("   Paul van der Mark, Maxim Teslenko and Chi Zhang, all postdocs/programmers in  \n");
-    MrBayesPrint ("   Fredrik's lab. A large number of users and students, too many to list here,   \n");
-    MrBayesPrint ("   have also contributed importantly to the project (type 'Acknowledgments' for  \n");
-    MrBayesPrint ("   a list of some of them).                                                      \n");
-    MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("   From 2003, MrBayes was distributed from SourceForge; the repository was moved \n");
-    MrBayesPrint ("   to GitHub in 2018, when the project entered maintenance phase and the res-    \n");
-    MrBayesPrint ("   ponsibility was transferred to National Bioinformatics Infrastructure Sweden  \n");
-    MrBayesPrint ("   (https://nbis.se), where Andreas Kahari and Johan Nylander jointly take care  \n");
-    MrBayesPrint ("   of bug fixes, documentation updates, and other maintenance tasks.             \n");
+    MrBayesPrint ("  DimethylBayes is a simple extension of the MrBayes application                 \n");
+    MrBayesPrint ("  with features to enable phylogenetic inference from DNA methylation            \n");
+    MrBayesPrint ("  data. For details of the history and full details of MrBayes                   \n");
+    MrBayesPrint ("  written by John Heulsenbeck and Frederick Ronquist,                            \n");
+    MrBayesPrint ("  see https://www.github.com/NBISweden/MrBayes.                                  \n");
+    MrBayesPrint ("    \n");
+    MrBayesPrint ("    \n");
+
     MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
 
     return (NO_ERROR);
@@ -982,7 +937,7 @@ int DoAbout (void)
 int DoAcknowledgments (void)
 {
     MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
-    MrBayesPrint ("   Acknowledgments                                                               \n");
+    MrBayesPrint ("   Acknowledgments (Reproduced from MrBayes)                                     \n");
     MrBayesPrint ("                                                                                 \n");
     MrBayesPrint ("   JPH and FR would like to thank Gautam Altekar, Andrea Betancourt, Jon         \n");
     MrBayesPrint ("   Bollback, Barry Hall, Jimmy McGuire, Rasmus Nielsen, David Swofford,          \n");
@@ -1974,7 +1929,7 @@ int DoCharStat (void)
 int DoCitations (void)
 {
     MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
-    MrBayesPrint ("   Citations                                                                     \n");
+    MrBayesPrint ("   Citations (Reproduced from MrBayes)                                           \n");
     MrBayesPrint ("                                                                                 \n");
     MrBayesPrint ("   If you publish results obtained using MrBayes you may want to cite the        \n");
     MrBayesPrint ("   program using one of these papers:                                            \n");
@@ -3502,7 +3457,8 @@ int DoDisclaimer (void)
     MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
     MrBayesPrint ("   Disclaimer                                                                    \n");
     MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("   Copyright 2003 by John P. Huelsenbeck and Fredrik Ronquist                    \n");
+    MrBayesPrint ("   DimethylBayes Copyright 2025 by Greg M Ellison                                \n");
+    MrBayesPrint ("   MrBayes Copyright 2003 by John P. Huelsenbeck and Fredrik Ronquist            \n");
     MrBayesPrint ("                                                                                 \n");
     MrBayesPrint ("   This software package is provided \"as is\" and without a warranty of any     \n");
     MrBayesPrint ("   kind. In no event shall the authors be held responsible for any damage        \n");
