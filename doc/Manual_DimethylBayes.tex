@@ -1,0 +1,130 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper]{geometry}
+\usepackage[english]{babel}   % Will manage the 90% hyphenation for us 
+%\usepackage[parfill]{parskip} % Activate to begin paragraphs width empty line instead of indent
+\usepackage{graphicx}
+\usepackage{amssymb,amsmath}
+\usepackage{setspace}
+\usepackage{url}
+\usepackage{natbib}
+\usepackage{pdfpages}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage[linktoc=all,colorlinks=true,citecolor=darkgray,filecolor=black,linkcolor=blue,urlcolor=purple]{hyperref}
+
+%%%% JN: For verbatim blocks, combine features from these packages
+\usepackage{float}
+\usepackage{fancyvrb}
+\usepackage{etoolbox}
+\makeatletter
+\preto{\@verbatim}{\topsep=0pt \partopsep=0pt }
+\makeatother
+\RecustomVerbatimEnvironment
+    {BVerbatim}{BVerbatim}
+    {baselinestretch=0.8,fontsize=\footnotesize}
+\RecustomVerbatimEnvironment
+    {Verbatim}{Verbatim}
+    {baselinestretch=0.8,fontsize=\small}
+
+% The following specifies a line spacing of 1.2 times normal
+\renewcommand{\baselinestretch}{1.2}
+
+% Short-hand font settings used in this document:
+%%%% JN: Currently, tttext is used instead of ttt. prout and term are not used
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\renewcommand\ttfamily{\usefont{T1}{lmtt}{m}{n}}
+\newcommand{\term}[1]{{\bfseries\slshape #1}}
+\newcommand{\ttt}[1]{\texttt{#1}}
+\newcommand{\prout}[1]{\ttt{#1}}
+\newcommand{\tb}[1]{\ttt{\textbf{#1}}}
+
+%%%% JN: Draft version, July 2020
+%%%% JN: I (JN) have started to review the text, re-run the commands, and added occasional comments.
+%%%% JN: Note that I use automatic text wrapping for paragraphs. In vim:
+%%%% JN  ':set textwidth=99' followed by ':set colorcolumn=+1'
+%%%% JN: NOTES:
+%%%% JN: Since we are not yet ready with the text, placement of tables (figures) are
+%%%% JN: not a priority. This will have to be set at a later stage.
+
+\begin{document}
+
+\title{DiemthylBayes Tutorial}
+
+\date{\large Draft version, 3/2025}
+
+\author{Greg Ellison}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}\label{intro}
+
+This short document describes the use of DimethylBayes, an extension of MrBayes
+with features to support phylogenetic inference of DNA methylation data. All the 
+features of MrBayes are available, so the online reference for MrBayes 
+should be referred to for detailed instructions for use.
+This document is a supplement that describes the 
+new features available for DNA methylation data. 
+
+\section{Acquiring and Installing DimethylBayes}
+
+DimethylBayes is available from https://github.com/gmellison/DimethylBayes.
+The installation process is identical to MrBayes. 
+
+\section{A Simple Analysis}\label{tutorialSimple}
+
+\subsection{Dimethyl Data in MrBayes}
+
+The Dimethyl datatype extends MrBayes by allowing methylome alignments 
+in addition to the datatypes described in the MrBayes manual. The 
+dimethyl datatype allows the characters \{0, 1, 2\} to represent the 
+number of methyl group attachments at a nucleotide site. Missing or 
+unknown characters are also allowed. There is an example nexus file 
+called \texttt{dimethyl.nex} in the examples folder, which contains the 
+following \texttt{DATA} block:
+
+\begin{figure}[h]
+\centering
+\begin{Verbatim}
+begin data;
+dimensions ntax=20 nchar=150;
+format datatype=dimethyl interleave=yes gap=- missing=?;
+\end{Verbatim}
+\end{figure}
+
+The data included in the example file is a truncated version of the G clone 
+DNA methylation alignment with the first 116 sites. Setting  \texttt{datatype=dimethyl}
+in the data block automatically applies the dimethyl substitution model.
+
+\subsection{Specifying the Model}
+
+The model is specified in the following mrbayes block:
+
+\begin{figure}[h]
+\centering
+\begin{BVerbatim}
+begin mrbayes;
+prset dimethylrate=dirichlet(0.6, 0.4);
+prset readerrpr=fixed(0.001);
+mcmc ngen=10000 samplefreq=500 burnin=1000;
+end;
+\end{BVerbatim}
+\end{figure}
+
+The \texttt{dimethylrate} option in the \texttt{prset} command above sets the prior distribution
+for the DNA methylationirate paramters \(a\) and \(b\) to a \(Dirichlet(0.6,0.4)\) distribution. 
+The DNA methylation rates can also be fixed if desired, for example the command 
+\texttt{prset dimethylrate=fixed(0.6, 0.4);} will set the prior distribution of \(a\) to be a point mass
+at \(0.6\). If no prior is specified, the rate prior is set to \(Dirichlet(0.5, 0.5)\).
+If desired, the DNA methylation rates may be fixed; for example \texttt{prset dimethylrate=fixed(0.6,0.4)}.
+If the DNA methylation rates are provided such that \(a + b \neq 1\), the rates will be normalized by 
+dividing by \(a + b\).
+
+The read error rate is fixed at \(0.001\) with the option 
+\texttt{readerrpr=fixed(0.001);}, a uniform distribution can be specified using (for example)
+\texttt{readerrpr=uniform(0.0, 0.001);}, to allow the read error rate to vary between 0 and 0.001.
+If no prior is specified, the read error rate is set to 0.
+
+\end{document}
