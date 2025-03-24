@@ -1,0 +1,148 @@
+DimethylBayes 0.1.0
+
+
+
+========================================================================
+Installing from the GitHub sources on Unix
+------------------------------------------------------------------------
+
+Make a shallow clone of the repository:
+
+    git clone --depth=1 https://github.com/gmellison/DimethylBayes.git
+
+To build DimethylBayes, you will need a C compiler (gcc or clang works well),
+the "make" utility, and optionally the "pkg-config" utility. It 
+may also be compiled with support for the Beagle library and for
+parallelization using MPI.
+
+The code in the DimethylBayes Git repository comes with a standard GNU
+"configure" script.  On any Unix system, these are the steps required to
+compile and optionally install DimethylBayes:
+
+* Run "configure" in the top-level directory to create "Makefile" (see
+  "./configure --help" for info about enabling and disabling features of
+  DimethylBayes, or how to install in non-standard locations etc., and also
+  read further down in this document):
+
+    ./configure
+
+* Make (i.e. compile) the project:
+
+    make
+
+* Install it on the system (optional).  This will install
+  the executable "mb" in /usr/local/bin, the documentation
+  in /usr/local/share/doc/mrbayes, and the example files in
+  /usr/local/share/examples/mrbayes unless the default installation
+  prefix ("/usr/local") is changed with the "--prefix" option when
+  running "configure".
+
+    make install
+
+* We also support configuring and building the project away from the
+  checked out source repository.  This avoids littering the source
+  repository checkout with temporary files.  This is done through the
+  following steps:
+
+  1. Create and enter a build directory somewhere (its name and location
+     is arbitrary)
+
+        mkdir build
+        cd build
+
+  2. Call the "configure" script
+
+        location-of-DimethylBayes-checkout/configure
+
+  3. Build and optionally install the project
+
+        make
+        make install
+
+
+Building DimethylBayes using the GNU autotools (Autoconf and Automake):
+------------------------------------------------------------------------
+
+DimethylBayes uses the GNU autotools, i.e. Automake and Autoconf, for its
+configuration and build system.  If you tinker with "configure.ac"
+and/or any of the "Makefile.am" files and then want to regenerate the
+"configure" script and associated files, there are some prerequisites
+that need to be in place:
+
+* Make sure Automake 1.15 (http://www.gnu.org/software/automake/)
+  is installed.
+
+* Make sure Autoconf 2.69 (http://www.gnu.org/software/autoconf/)
+  is installed.
+
+The "configure.ac" script uses the "pkg-config" tool for detection
+of external libraries (Beagle) and also uses m4 macros from the
+autoconf-archive collection for detection of MPI, Readline, and some
+architecture-dependent compiler flags.  Therefore,
+
+* Make sure pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
+  is installed.
+
+* Make sure autoconf-archive 2016.03.20 (or later)
+  (http://www.gnu.org/software/autoconf-archive/) is installed.
+
+* On some systems that uses metaauto for wrapping multiple versions of
+  the GNU autotools (OpenBSD for example):
+
+    export AUTOCONF_VERSION=2.69
+    export AUTOMAKE_VERSION=1.15
+
+* On Ubuntu Linux, installing the following packages installs all of the
+  above prerequisites:
+
+    1. automake
+    2. autoconf
+    3. pkg-config
+    4. autoconf-archive
+
+  These may be installed through
+
+    sudo apt install automake autoconf pkg-config autoconf-archive
+
+When all the prerequisites are in place:
+
+* Run "autoreconf" to generate the "configure" script:
+
+    autoreconf -i
+
+* Then continue as outlined earlier in this document.
+
+
+Disabling the SSE, AVX and FMA code paths
+------------------------------------------------------------------------
+
+DimethylBayes will use SSE, AVX and FMA instructions to speed up computations
+on CPUs that support these instruction sets, if the compiler supports
+it.  These code paths are however optional, and if you suspect a bug in
+part of this code, you may use "--disable-sse", "--disable-avx" and/or
+"--disable-fma" to disable it when running the "configure" script.
+
+Note however, that disabling SSE will also disable AVX and FMA, and
+disabling AVX will also disable FMA.
+
+Note also that disabling these accelerated code paths will not remove
+the "-msse" (etc.) compiler flags.  These compiler flags affects what
+instructions the compiler is allowed to generate, not what code path is
+chosen for compilation.
+
+
+Picking up and using MPI:
+------------------------------------------------------------------------
+
+The "configure" script will find any available MPI C compiler or
+compiler wrapper and use it (for example the one provided by OpenMPI
+(https://www.open-mpi.org/) or MPICH (https://www.mpich.org/)) if
+the "--with-mpi" flag is used.  If this flag is not used, or if
+"--without-mpi" is used, DimethylBayes will be compiled without support for
+MPI parallelization.
+
+You may set the "MPICC" environment variable to the name or path of a
+specific MPI C compiler, if you have many to choose from:
+
+        env MPICC="/usr/local/bin/mpicc" ./configure --with-mpi
+
