@@ -1,13 +1,16 @@
-Hi,
+This is the GitHub repository for DimethylBayes, a for of MrBayes.  
+DimethylBayes implements features useful for Bayesian inference 
+of phylogenies from DNA methylation data. All functionality of 
+MrBayes is included to enable combing model partitions of 
+DNA methylation data with other datatypes and models included in 
+MrBayes.  
 
-This is the GitHub repository for MrBayes, a program used for Bayesian
-inference of phylogeny.
-
-Build instructions, very very short version (would install MrBayes as
+Build instructions, very very short version (would install DimethylBayes as
 "/usr/local/bin/mb" on a Unix system):
 
     git clone --depth=1 https://github.com/gmellison/DimethylBayes.git
     cd DimethylBayes
     ./configure
     make && sudo make install
+    src/dmb
 
