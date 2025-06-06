@@ -3253,7 +3253,7 @@ fi
 if test "${enable_doc+set}" = set; then :
   enableval=$enable_doc; enable_doc=$enableval
 else
-  enable_doc=yes
+  enable_doc=no
 fi
 
 
@@ -7998,9 +7998,8 @@ fi
 done
 
 
-ac_config_files="$ac_config_files Makefile doc/Makefile doc/SMME_paper/Makefile doc/manual/Makefile examples/Makefile src/Makefile testing/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile"
 
-ac_config_files="$ac_config_files testing/runtests.sh"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

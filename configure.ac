@@ -279,10 +279,6 @@ AS_IF([test "x$enable_fma" = "xno"],
 AC_CHECK_FUNCS([floor memset pow sqrt strchr])
 
 AC_CONFIG_FILES([Makefile
-                 #doc/Makefile
-                 #doc/SMME_paper/Makefile
-                 #doc/manual/Makefile
-                 #examples/Makefile
                  src/Makefile
                  testing/Makefile
 ])
