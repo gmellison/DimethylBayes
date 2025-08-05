@@ -8194,11 +8194,23 @@ int SetDimethylQMatrix (MrBFlt **a, int n, int whichChain, int division)
     rateValues = GetParamVals(m->dimethylRate, whichChain, state[whichChain]);
     al = rateValues[0];
     be = rateValues[1];
-    denom = (al+be)*(al+be);
 
-    f[0] = be*be / denom; 
-    f[1] = 2*be*al / denom;
-    f[2] = al*al / denom; 
+    if (m->methylType == 0)
+    {
+        denom = (al+be)*(al+be);
+
+        f[0] = be*be / denom; 
+        f[1] = 2*be*al / denom;
+        f[2] = al*al / denom; 
+    } else {
+
+        denom = (al+be);
+
+        f[0] = be / denom; 
+        f[1] = al / denom;
+        f[2] = 0.0;
+
+    }
 
     /*  scaler = 2*al*be*(1+al*be);    */
     /*  scaler : -sum q_ii * pi_ii: */
@@ -8209,30 +8221,58 @@ int SetDimethylQMatrix (MrBFlt **a, int n, int whichChain, int division)
        Here, we set the rate matrix for the GTR model (Tavare, 1986). We
        need not only the 6 rates for this model (rateValues), but also the 
        base frequencies (bs). */
-        
-    /* set Q matrix to 0 */
-    a[0][0] = -2 * al;
-    a[0][1] = 2 * al;
-    a[0][2] = 0.0;
+       
+    if (m->methylType == 0)  
+        {
+        /* set Q matrix to 0 */
+        a[0][0] = -2 * al;
+        a[0][1] = 2 * al;
+        a[0][2] = 0.0;
 
-    a[1][0] = be;
-    a[1][1] = -(be+al);
-    a[1][2] = al;
+        a[1][0] = be;
+        a[1][1] = -(be+al);
+        a[1][2] = al;
 
-    a[2][0] = 0.0;
-    a[2][1] = 2 * be;
-    a[2][2] = -2 * be;
+        a[2][0] = 0.0;
+        a[2][1] = 2 * be;
+        a[2][2] = -2 * be;
 
-    scaler = 0.0;
-    for (i=0;i<3;i++)
-        scaler += -1.0 * f[i] * a[i][i];
+        scaler = 0.0;
+        for (i=0;i<3;i++)
+            scaler += -1.0 * f[i] * a[i][i];
 
-    /* rescale Q matrix */
-    scaler = 1.0 / scaler;
+        /* rescale Q matrix */
+        scaler = 1.0 / scaler;
 
-    for (i=0; i<3; i++)
-        for (j=0; j<3; j++)
-            a[i][j] *= scaler;
+        for (i=0; i<3; i++)
+            for (j=0; j<3; j++)
+                a[i][j] *= scaler;
+        } else {
+            /* set Q matrix to 0 */
+            a[0][0] = -al;
+            a[0][1] =  al;
+            a[0][2] = 0.0;
+    
+            a[1][0] = be;
+            a[1][1] = -be;
+            a[1][2] = 0.0;
+    
+            a[2][0] = 0.0;
+            a[2][1] = 0.0;
+            a[2][2] = 0.0;
+    
+            scaler = 0.0;
+            for (i=0;i<2;i++)
+                scaler += -1.0 * f[i] * a[i][i];
+    
+            /* rescale Q matrix */
+            scaler = 1.0 / scaler;
+    
+            for (i=0; i<2; i++)
+                for (j=0; j<2; j++)
+                    a[i][j] *= scaler;
+
+        }
     
     return (NO_ERROR);
 }
@@ -12263,11 +12303,23 @@ int Likelihood_Dimethyl (TreeNode *p, int division, int chain, MrBFlt *lnL, int 
     dimRates=GetParamVals (m->dimethylRate, chain, state[chain]);
     alpha = dimRates[0];
     beta = dimRates[1]; /*  dimRates[1]; */
-    denom = (alpha+beta) * (alpha+beta);
 
-    bs[0] = (beta*beta)/denom;
-    bs[1] = (2.0*alpha*beta)/denom;
-    bs[2] = (alpha*alpha)/denom;
+    if (m->methylType == 0)
+        {
+        denom = (alpha+beta) * (alpha+beta);
+
+        bs[0] = (beta*beta)/denom;
+        bs[1] = (2.0*alpha*beta)/denom;
+        bs[2] = (alpha*alpha)/denom;
+        } 
+    else if (m->methylType == 1) 
+        {
+        denom = (alpha+beta) ;
+
+        bs[0] = beta/denom;
+        bs[1] = alpha/denom;
+        bs[2] = 0.0;
+        }
 
     /* find category frequencies */
     if (hasPInvar == NO)
@@ -12920,10 +12972,20 @@ int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
 
     /* get base rate */
     baseRate = GetRate (division, chain);
-    denom = ((alpha + beta) * (alpha + beta));
-    pis[0] = beta*beta / denom;
-    pis[1] = 2.0*alpha*beta / denom; 
-    pis[2] = alpha*alpha / denom;
+
+    if (m->methylType == 0 )
+        {
+        denom = ((alpha + beta) * (alpha + beta));
+        pis[0] = beta*beta / denom;
+        pis[1] = 2.0*alpha*beta / denom; 
+        pis[2] = alpha*alpha / denom;
+        }
+    else 
+        {
+        denom = (alpha + beta);
+        pis[0] = beta / denom;
+        pis[1] = alpha / denom; 
+        }
 
     /* compensate for invariable sites if appropriate */
     if (m->pInvar != NULL)
@@ -12985,7 +13047,10 @@ int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
     /* fill in values */
     for (k=index=0; k<m->numRateCats; k++)
         {
-        t =  length * baseRate * catRate[k] * 2.0;  /*  correction factor of 2 since 2 sites per site  */
+        if (m->methylType == 0)
+            t =  length * baseRate * catRate[k] * 2.0;  /*  correction factor of 2 since 2 sites per site  */
+        else 
+            t =  length * baseRate * catRate[k] ;  /*  correction factor of 2 since 2 sites per site  */
 
         /*
         e1 = exp(-1.0*(a+b) * t);

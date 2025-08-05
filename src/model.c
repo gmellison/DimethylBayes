@@ -4022,6 +4022,58 @@ int DoLsetParm (char *parmName, char *tkn)
             else
                 return (ERROR);
             }
+        /* set  () ***********************************************************/
+        else if (!strcmp(parmName, "Methyltype"))
+            {
+            if (expecting == Expecting(EQUALSIGN))
+                {
+                for (i=0; i<numCurrentDivisions; i++)
+                    modelParams[i].coding = ALL;
+                
+                expecting = Expecting(ALPHA);
+                }
+            else if (expecting == Expecting(VERTICALBAR))
+                expecting = Expecting(ALPHA);
+            else if (expecting == Expecting(ALPHA))
+                {
+                if (IsArgValid(tkn, tempStr) == NO_ERROR)
+                    {
+                    nApplied = NumActiveParts ();
+                    for (i=0; i<numCurrentDivisions; i++)
+                        {
+                        if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == RESTRICTION || modelParams[i].dataType == STANDARD))
+                            {
+                            if(!strcmp(tempStr, "selfing"))
+                                {
+                                modelSettings[i].methylType = 1;
+                                modelSettings[i].numModelStates = 2;
+                                }
+                            else if(!strcmp(tempStr, "clonal"))
+                                {
+                                modelSettings[i].methylType = 0;
+                                modelSettings[i].numModelStates = 3;
+                                }
+
+                            if (nApplied == 0 && numCurrentDivisions == 1)
+                                MrBayesPrint ("%s  Type set to %s %s\n", spacer, tempStr);
+                            else
+                                MrBayesPrint ("%s   Type set to  %s for partition %d\n", spacer, tempStr, i+1);
+                            }
+                        }
+                    }
+                else
+                    {
+                    MrBayesPrint ("%s   Invalid argument for missing patterns\n", spacer);
+                    return (ERROR);
+                    }
+                expecting = Expecting(PARAMETER) | Expecting(SEMICOLON) | Expecting(VERTICALBAR);
+                }
+            else
+                return (ERROR);
+            }
+
+
+
         /* any additional setting goes here */
 
         else

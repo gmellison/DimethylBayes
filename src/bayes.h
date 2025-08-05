@@ -1425,6 +1425,7 @@ typedef struct modelinfo
     int         **readErrClIndex;
     int         *readErrClScratchIndex;      /* index to scratch space for node cond likes   */
     int         useReadErr;
+    int         methylType; 
 
     /* Likelihood function pointers */
     LikeDownFxn         CondLikeDown;       /* function for calculating partials            */
