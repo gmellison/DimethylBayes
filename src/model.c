@@ -2894,12 +2894,12 @@ int DoLinkParm (char *parmName, char *tkn)
             for (i=0; i<numCurrentDivisions; i++)
                 tempLinkUnlink[P_REVMAT][i] = tempLinkUnlinkVec[i];
             }
-        else if (!strcmp(parmName, "Dimethylrate"))
-            {
+        else if (!strcmp(parmName, "Dimethylrate"))/* ~~ DMB ~~ */
+            {  
             for (i=0; i<numCurrentDivisions; i++)
-                tempLinkUnlink[P_DIMETHYLRATES][i] = tempLinkUnlinkVec[i];
+                tempLinkUnlink[P_DIMETHYLRATES][i] = tempLinkUnlinkVec[i];  
             }
-        else if (!strcmp(parmName, "Readerrpr"))
+        else if (!strcmp(parmName, "Readerrpr"))/* ~~ DMB ~~ */
             {
             for (i=0; i<numCurrentDivisions; i++)
                 tempLinkUnlink[P_READERRRATE][i] = tempLinkUnlinkVec[i];
@@ -3293,7 +3293,7 @@ int DoLsetParm (char *parmName, char *tkn)
                             else
                                 MrBayesPrint ("%s   Setting Nucmodel to %s for partition %d\n", spacer, modelParams[i].nucModel, i+1);
                             } 
-                        else if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == DIMETHYL))
+                        else if ((activeParts[i] == YES || nApplied == 0) && (modelParams[i].dataType == DIMETHYL)) /* ~~ DMB ~~ */
                             {
                             strcpy(modelParams[i].nucModel, tempStr);
                             modelParams[i].nStates = NumStates (i);
@@ -5023,8 +5023,9 @@ int DoPrsetParm (char *parmName, char *tkn)
                 return (ERROR);
             }
 
+        /* ~~ DMB ~~ */
         /* set readErrPr (revMatPr) *********************************************************/
-        else if (!strcmp(parmName, "Readerrpr"))
+        else if (!strcmp(parmName, "Readerrpr")) 
             {
             if (expecting == Expecting(EQUALSIGN))
                 expecting = Expecting(ALPHA);
@@ -5127,7 +5128,7 @@ int DoPrsetParm (char *parmName, char *tkn)
                 return (ERROR);
             }
 
-        /* set  () *********************************************************/
+        /* ~~ DMB ~~ */
         else if (!strcmp(parmName, "Dimethylratepr"))
             {
             if (expecting == Expecting(EQUALSIGN))
@@ -11745,6 +11746,8 @@ int FillNormalParams (RandLong *seed, int fromChain, int toChain)
                     value[0] = mp->tRatioFix;
                 }
 
+
+            /* ~~ DMB ~~ */
             /* Fill in dimethyl rates **********************************************************************************/
             else if (p->paramType == P_DIMETHYLRATES)
                 {
@@ -14145,6 +14148,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         isFirstProtein = YES;
     if (modelParams[part2].dataType == PROTEIN || ((modelParams[part2].dataType == DNA || modelParams[part2].dataType == RNA) && !strcmp(modelParams[part2].nucModel,"Protein")))
         isSecondProtein = YES;      
+    /*  ~~ DMB ~~ */
     isFirstMethyl = isSecondMethyl = NO;
     if (modelParams[part1].dataType == DIMETHYL)
         isFirstMethyl = YES;
@@ -16279,6 +16283,7 @@ int IsModelSame (int whichParam, int part1, int part2, int *isApplic1, int *isAp
         if ((*isApplic1) == NO || (*isApplic2) == NO)
             isSame = NO;
         }
+    /*  ~~ DMB ~~ */
     else if (whichParam == P_DIMETHYLRATES)
         {
         /* Check if the model is parsimony for either partition */
@@ -16621,7 +16626,7 @@ int NumStates (int part)
         {
         return (20);
         }
-    else if (modelParams[part].dataType == DIMETHYL)
+    else if (modelParams[part].dataType == DIMETHYL) /*  ~~ DMB ~~ */
         {
         if (!strcmp(modelParams[part].nucModel, "Dimethyl"))
             return (3);
@@ -16664,7 +16669,7 @@ int PrintCompMatrix (void)
 
         if (mp->dataType == DNA || mp->dataType == RNA)
             whichChar = &WhichNuc;
-        if (mp->dataType == DIMETHYL)
+        if (mp->dataType == DIMETHYL)     /*  ~~ DMB ~~ */
             whichChar=&WhichMethyl;
         if (mp->dataType == PROTEIN)
             whichChar = &WhichAA;
@@ -19190,7 +19195,7 @@ int SetModelInfo (void)
             m->nucModelId = NUCMODEL_DOUBLET;
         else if (!strcmp(mp->nucModel, "Protein"))
             m->nucModelId = NUCMODEL_AA;
-        else if (!strcmp(mp->nucModel, "Dimethyl"))
+        else if (!strcmp(mp->nucModel, "Dimethyl")) /*  ~~ DMB ~~  */ 
             m->nucModelId = NUCMODEL_DIMETHYL;
         else /* if (!strcmp(mp->nucModelId, "Codon")) */
             m->nucModelId = NUCMODEL_CODON;
@@ -19375,7 +19380,7 @@ int SetModelInfo (void)
                 return ERROR;
                 }
             }
-        else if (m->dataType == DIMETHYL)
+        else if (m->dataType == DIMETHYL) /*  ~~ DMB ~~  */ 
             { 
             ts=m->numModelStates;
             m->cijkLength=(ts*ts*ts) + (2*ts);
@@ -19398,7 +19403,7 @@ int SetModelInfo (void)
                 if (!strcmp(mp->nucModel,"Codon") && !strcmp(mp->omegaVar,"Equal"))
                     m->printAncStates = YES;
                 }
-            else if (m->dataType == DIMETHYL) 
+            else if (m->dataType == DIMETHYL)   /*  ~~ DMB ~~  */ 
                 {}
             else if (m->dataType == STANDARD || m->dataType == RESTRICTION)
                 m->printAncStates = YES;
@@ -19765,7 +19770,7 @@ int SetModelParams (void)
                     }
                 }
             }
-        else if (j == P_DIMETHYLRATES)
+        else if (j == P_DIMETHYLRATES)  /*  ~~ DMB ~~  */ 
             {
             /* Set up dimethyl ****************************************************************************************/
             p->paramType = P_DIMETHYLRATES;
@@ -19789,15 +19794,15 @@ int SetModelParams (void)
             if (p->paramId != DIMETHYL_RATE_FIX)
                 p->printParam = YES;
 
-            sprintf (temp, "methylRate");
+            sprintf (temp, "methylGainRate");
             SafeStrcat (&p->paramHeader, temp);
             SafeStrcat (&p->paramHeader, partString);
 
-            sprintf(temp, "\tdemethylRate");
+            sprintf(temp, "\tmethylLoseRate");
             SafeStrcat (&p->paramHeader, temp);
             SafeStrcat (&p->paramHeader, partString);
             }
-        else if (j == P_READERRRATE)
+        else if (j == P_READERRRATE)  /*  ~~ DMB ~~  */ 
             {
             /* Set up dim1thyl ****************************************************************************************/
             p->paramType = P_READERRRATE;
@@ -20206,7 +20211,7 @@ int SetModelParams (void)
                                 }
                             }
                         }
-                    else if (m->dataType == DIMETHYL)
+                    else if (m->dataType == DIMETHYL)  /*  ~~ DMB ~~  */ 
                         {
                         sprintf (temp, "pi(%c)", StateCode_DIMETHYL(0));
                         SafeStrcat (&p->paramHeader,temp);
@@ -24093,7 +24098,7 @@ void SetUpMoveTypes (void)
     mt->Autotune = &AutotuneRJClocks;
     mt->targetRate = 1.0;
          
-    /* Move_DimethylRates */
+    /* Move_DimethylRates */  /*  ~~ DMB ~~  */ 
     mt = &moveTypes[i++];
     mt->name = "Dirichlet proposal";
     mt->shortName = "Dirichlet";
@@ -24201,7 +24206,7 @@ int ShowModel (void)
             {
             MrBayesPrint ("%s         Datatype  = Continuous\n", spacer);
             }
-        else if (modelParams[i].dataType == DIMETHYL)
+        else if (modelParams[i].dataType == DIMETHYL)  /*  ~~ DMB ~~  */ 
             {
             MrBayesPrint ("%s         Datatype  = Dimethyl \n", spacer);
             ns = 3;
@@ -24355,7 +24360,7 @@ int ShowModel (void)
                         MrBayesPrint ("%s         Code      = %s\n", spacer, modelParams[i].geneticCode);
                         }
                     }
-                else if (modelSettings[i].dataType == DIMETHYL) 
+                else if (modelSettings[i].dataType == DIMETHYL)   /*  ~~ DMB ~~  */ 
                     {
                     MrBayesPrint ("%s         Nucmodel  = %s\n", spacer, modelParams[i].nucModel);
                     if (!strcmp(modelParams[i].nucModel, "Dimethyl"))
@@ -24672,7 +24677,7 @@ int ShowModel (void)
                     {
                     if (((modelSettings[i].dataType == DNA || modelSettings[i].dataType == RNA) && strcmp(modelParams[i].nucModel,"Codon")!=0) ||
                           modelSettings[i].dataType == PROTEIN || modelSettings[i].dataType == RESTRICTION || modelSettings[i].dataType == STANDARD ||
-                          modelSettings[i].dataType == DIMETHYL)
+                          modelSettings[i].dataType == DIMETHYL)  /*  ~~ DMB ~~  */ 
                         {
                         if (!strcmp(modelParams[i].covarionModel, "No"))
                             MrBayesPrint ("%s         Rates     = %s\n", spacer, modelParams[i].ratesModel);
@@ -25213,7 +25218,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
             {
             MrBayesPrint ("%s      Speciestree       ", spacer);
             }
-        else if (j == P_DIMETHYLRATES)
+        else if (j == P_DIMETHYLRATES)  /*  ~~ DMB ~~  */
             {
             MrBayesPrint ("%s      Dimethyl Rates  ", spacer);
             }
@@ -25265,7 +25270,7 @@ int ShowParameters (int showStartVals, int showMoves, int showAllAvailable)
         MrBayesPrint ("%s   %4d --  Parameter  = %s\n", spacer, i+1, p->name);
         MrBayesPrint ("%s            Type       = %s\n", spacer, p->paramTypeName);
         /* print prior */
-        if (j == P_DIMETHYLRATES)
+        if (j == P_DIMETHYLRATES)  /*  ~~ DMB ~~  */
             {
             if (!strcmp(mp->dimethylRatePr,"Dirichlet"))
                 MrBayesPrint ("%s            Prior      = Dirichlet(%1.2lf, %1.2lf)\n", spacer, mp->dimethylRateDir[0], mp->dimethylRateDir[1]);

@@ -10889,6 +10889,7 @@ int UpDateCijk (int whichPart, int whichChain)
 
 /* * Dimethyl Functions Below * */
 
+/*  ~~ DMB ~~ */
 /*----------------------------------------------------------------
 |
 |   CondLikeDown_Dimethyl: 3by3 dimethyl model with or without rate
@@ -11058,6 +11059,8 @@ int CondLikeDown_Dimethyl (TreeNode *p, int division, int chain)
     return NO_ERROR;
 }
 
+
+/*  ~~ DMB ~~  */
 #if defined (FMA_ENABLED)
 /*----------------------------------------------------------------
  |
@@ -11162,7 +11165,7 @@ int CondLikeDown_Dimethyl_FMA (TreeNode *p, int division, int chain)
 }
 #endif
 
-
+/*  ~~ DMB ~~  */
 #if defined (AVX_ENABLED)
 /*----------------------------------------------------------------
  |
@@ -11277,6 +11280,8 @@ int CondLikeDown_Dimethyl_AVX (TreeNode *p, int division, int chain)
     
 }
 #endif
+
+/*  ~~ DMB ~~  */
 
 
 #if defined (SSE_ENABLED)
@@ -11394,6 +11399,8 @@ int CondLikeDown_Dimethyl_SSE (TreeNode *p, int division, int chain)
     
 }
 #endif
+
+/*  ~~ DMB ~~  */
 
 
 #if defined (FMA_ENABLED)
@@ -11662,6 +11669,8 @@ int CondLikeRoot_Dimethyl_AVX (TreeNode *p, int division, int chain)
 }
 #endif
 
+/*  ~~ DMB ~~  */
+
 
 #if defined (SSE_ENABLED)
 /*----------------------------------------------------------------
@@ -11805,6 +11814,8 @@ int CondLikeRoot_Dimethyl_SSE (TreeNode *p, int division, int chain)
 }
 #endif
 
+
+/*  ~~ DMB ~~  */
 
 
 /*----------------------------------------------------------------
@@ -12023,6 +12034,8 @@ int CondLikeRoot_Dimethyl (TreeNode *p, int division, int chain)
     return NO_ERROR;
 }
 
+/*  ~~ DMB ~~  */
+
 /*----------------------------------------------------------------
 |
 |   CondLikeScaler_Dimethyl: 3by3 dimethyl model with or without rate
@@ -12082,6 +12095,9 @@ int CondLikeScaler_Dimethyl (TreeNode *p, int division, int chain)
 
     return NO_ERROR;
 }
+
+
+/*  ~~ DMB ~~  */
 
 #if defined (AVX_ENABLED)
 /*----------------------------------------------------------------
@@ -12151,7 +12167,7 @@ int CondLikeScaler_Dimethyl_AVX (TreeNode *p, int division, int chain)
 }
 #endif
 
-
+/*  ~~ DMB ~~  */
 #if defined (SSE_ENABLED)
 /*----------------------------------------------------------------
 |
@@ -12220,6 +12236,7 @@ int CondLikeScaler_Dimethyl_SSE (TreeNode *p, int division, int chain)
 #endif
 
 
+/*  ~~ DMB ~~  */
 /*------------------------------------------------------------------
 |
 |   Likelihood_Dimethyl: 3by3 nucleotide models with or without rate
@@ -12972,20 +12989,11 @@ int TiProbs_Dimethyl (TreeNode *p, int division, int chain)
 
     /* numerical errors will ensue if we allow very large or very small branch lengths,
        which might occur in relaxed clock models */
-    /*  
-    scale = 2*alpha*beta * (1+beta+alpha); 
-
-    a = alpha / (alpha + beta) ;
-    b = beta / (alpha + beta) ;
-    a2 = a * a;
-    ab = a * b;
-    b2 = b * b;
-    */
 
     /* fill in values */
     for (k=index=0; k<m->numRateCats; k++)
         {
-        t =  length * baseRate * catRate[k] * 2.0;  /*  correction factor of 2 since 2 sites per site  */
+        t =  length * baseRate * catRate[k] * 2.0;  /*  correction factor of 2 since 2 methyls per site  */
 
         /*
         e1 = exp(-1.0*(a+b) * t);

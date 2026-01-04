@@ -920,7 +920,7 @@ int DoAbout (void)
     MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
     MrBayesPrint ("   About the program                                                             \n");
     MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("  DimethylBayes is a simple extension of the MrBayes application                 \n");
+    MrBayesPrint ("  DimethylBayes is an extension of the MrBayes application                       \n");
     MrBayesPrint ("  with features to enable phylogenetic inference from DNA methylation            \n");
     MrBayesPrint ("  data. For details of the history and full details of MrBayes                   \n");
     MrBayesPrint ("  written by John Heulsenbeck and Frederick Ronquist,                            \n");
@@ -3455,9 +3455,11 @@ int DoDimensionsParm (char *parmName, char *tkn)
 int DoDisclaimer (void)
 {
     MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
+    MrBayesPrint ("   DmB -- disclaimer for MrBayes below                                            \n");
+    MrBayesPrint ("   ---------------------------------------------------------------------------   \n");
     MrBayesPrint ("   Disclaimer                                                                    \n");
     MrBayesPrint ("                                                                                 \n");
-    MrBayesPrint ("   DimethylBayes Copyright 2025 by Greg M Ellison                                \n");
+    MrBayesPrint ("                                                                                 \n");
     MrBayesPrint ("   MrBayes Copyright 2003 by John P. Huelsenbeck and Fredrik Ronquist            \n");
     MrBayesPrint ("                                                                                 \n");
     MrBayesPrint ("   This software package is provided \"as is\" and without a warranty of any     \n");
@@ -4087,7 +4089,7 @@ int DoFormatParm (char *parmName, char *tkn)
                             dataType = RESTRICTION;
                         else if (!strcmp(tempStr, "Standard"))
                             dataType = STANDARD;
-                        else if (!strcmp(tempStr, "Dimethyl"))
+                        else if (!strcmp(tempStr, "Dimethyl")) /*  ~~ DMB ~~ */
                             dataType = DIMETHYL;
                         else if (!strcmp(tempStr, "Continuous"))
                             {
@@ -4123,7 +4125,7 @@ int DoFormatParm (char *parmName, char *tkn)
                             dataType = RESTRICTION;
                         else if (!strcmp(tempStr, "Standard"))
                             dataType = STANDARD;
-                        else if (!strcmp(tempStr, "Dimethyl"))
+                        else if (!strcmp(tempStr, "Dimethyl")) /*  ~~ DMB ~~ */
                             dataType = DIMETHYL;
                          else if (!strcmp(tempStr, "Continuous"))
                             {
@@ -14508,7 +14510,7 @@ void SetUpParms (void)
     PARAM   (4, "Ntax",           DoDimensionsParm,  "\0");
     PARAM   (5, "Nchar",          DoDimensionsParm,  "\0");
     PARAM   (6, "Interleave",     DoFormatParm,      "Yes|No|\0");
-    PARAM   (7, "Datatype",       DoFormatParm,      "Dna|Rna|Protein|Restriction|Standard|Continuous|Mixed|Dimethyl|\0");
+    PARAM   (7, "Datatype",       DoFormatParm,      "Dna|Rna|Protein|Restriction|Standard|Continuous|Mixed|Dimethyl|\0"); /*  ~~ DMB ~~ */
     PARAM   (8, "Gap",            DoFormatParm,      "\0");
     PARAM   (9, "Missing",        DoFormatParm,      "\0");
     PARAM  (10, "Matchchar",      DoFormatParm,      "\0");
@@ -14784,9 +14786,9 @@ void SetUpParms (void)
     PARAM (280, "Statefreqmodel", DoLsetParm,        "Stationary|Directional|Mixed|\0"); //SK
     PARAM (281, "Rootfreqpr",     DoPrsetParm,       "Dirichlet|Fixed|\0"); //SK
     PARAM (282, "Statefrmod",     DoLsetParm,        "Stationary|Directional|Mixed|\0"); //SK
-    PARAM (283, "Dimethylratepr",  DoPrsetParm,      "Dirichlet|Fixed|\0"); 
-    PARAM (284, "Dimethylrate",   DoLinkParm,        "\0"); 
-    PARAM (285, "Readerrpr",      DoPrsetParm,       "Uniform|Fixed|\0"); 
+    PARAM (283, "Dimethylratepr",  DoPrsetParm,      "Dirichlet|Fixed|\0");  /*  ~~ DMB ~~ */
+    PARAM (284, "Dimethylrate",   DoLinkParm,        "\0");  /*  ~~ DMB ~~ */
+    PARAM (285, "Readerrpr",      DoPrsetParm,       "Uniform|Fixed|\0");  /*  ~~ DMB ~~ */
 
     /* NOTE: If a change is made to the parameter table, make certain you change
             NUMPARAMS (now 283; one more than last index) at the top of this file. */
@@ -15381,8 +15383,7 @@ char WhichNuc (int x)
         return (' ');
 }
 
-// greg (checkpoint for vim file navigating)
-
+/* ~~ DMB ~~ */
 char WhichMethyl (int x)
 {
     if (x == 1)

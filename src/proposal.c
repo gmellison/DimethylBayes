@@ -15271,7 +15271,7 @@ int Move_Dimethyl_Dir (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorR
         y += (alphaDir[i]-1.0)*log(oldRate[i]);
     (*lnPriorRatio) = x - y;
 
-    /* Set update flags for all partitions that share this revmat. Note that the conditional
+    /* Set update flags for all partitions that share this dimethylRate. Note that the conditional
        likelihood update flags have been set before we even call this function. */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);
@@ -15287,7 +15287,6 @@ int Move_Dimethyl_Dir (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorR
 int Move_ReadErrRate (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRatio, MrBFlt *lnProposalRatio, MrBFlt *mvp)
 {
     /* change proportion of site methylation read errors readErrRate */
-
     int             i, c, isValidP, *rateCat, nGammaCats;
     MrBFlt          oldP, newP, window, minP, maxP, ran, lnReadErrRatio, lnNonErrRatio;
     CLFlt           *nSitesOfPat;
@@ -15300,7 +15299,7 @@ int Move_ReadErrRate (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRa
     /* get model params */
     mp = &modelParams[param->relParts[0]];
     
-    /* get minimum and maximum values for pInvar */
+    /* get minimum and maximum values for readErrRate */
     minP = mp->readErrUni[0];
     maxP = mp->readErrUni[1];
 
@@ -15358,10 +15357,10 @@ int Move_ReadErrRate (Param *param, int chain, RandLong *seed, MrBFlt *lnPriorRa
             }
         }
     
-    /* copy new pInvar value back */
+    /* copy new readErrRate value back */
     *GetParamVals(param, chain, state[chain]) = newP;
 
-    /* Set update flags for all partitions that share this pInvar. Note that the conditional
+    /* Set update flags for all partitions that share this readErrRate. Note that the conditional
        likelihood update flags for divisions have been set before we even call this function. */
     for (i=0; i<param->nRelParts; i++)
         TouchAllTreeNodes(&modelSettings[param->relParts[i]],chain);

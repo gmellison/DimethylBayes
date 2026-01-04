@@ -1,12 +1,13 @@
-This is the GitHub repository for DimethylBayes, a for of MrBayes.  
+This is the GitHub repository for DimethylBayes, a fork of 
+MrBayes (https://github.com/NBISweden/MrBayes).    
 DimethylBayes implements features useful for Bayesian inference 
 of phylogenies from DNA methylation data. All functionality of 
 MrBayes is included to enable combing model partitions of 
 DNA methylation data with other datatypes and models included in 
 MrBayes.  
 
-Build instructions, very very short version (would install DimethylBayes as
-"/usr/local/bin/mb" on a Unix system):
+Build instructions, very short version (would install DimethylBayes as
+"/usr/local/bin/dmb" on a Unix system):
 
     git clone --depth=1 https://github.com/gmellison/DimethylBayes.git
     cd DimethylBayes
@@ -14,3 +15,14 @@ Build instructions, very very short version (would install DimethylBayes as
     make && sudo make install
     src/dmb
 
+Functions for the likelihood calculations for the DNA methylation substitution model 
+are implemented in the `likelihood.c`, the prior distributions and moves 
+for the new parameters are in `proposal.c`, and the handling of the new
+datatype and parameters is in `model.c`  and `command.c`. New variables 
+are declared in `bayes.h`, and the allocations for the read error likelihood calculation
+are in mcmc.c. These changes have been flagged with a comment `/* ~DMB~ */`.
+
+The three-state substitution model is enabled by setting the parameter `datatype=dimethyl;`
+in the matrix command. The new parameters  
+`readerrpr=fixed(0)` (the default) or `readerrpr=uniform(0,0.01)`.  
+`methylratepr=fixed(1,2), `methylratepr=dirichlet(0.1,0.2);`

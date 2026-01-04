@@ -4536,6 +4536,7 @@ void FreeChainMemory (void)
             m->condLikeIndex = NULL;
             }
 
+/*  ~~ DMB ~~ */
         if (m->readErrCls)
             {
             for (j=0; j<m->numReadErrCls; j++)
@@ -5805,6 +5806,7 @@ int InitChainCondLikes (void)
         m->numCondLikes = (numLocalChains + 1) * (nIntNodes);
         m->numCondLikes += numLocalTaxa;
 
+/*  ~~ DMB ~~ */
         if (m->useReadErr) 
             {
             m->numReadErrCls = (numLocalChains + 1) * (numLocalTaxa);
@@ -5955,6 +5957,7 @@ int InitChainCondLikes (void)
             clIndex += 1; /* even for multiple omega cat we need only one set of conditional likelihoods  for terminals for all chains.*/
             }
 
+/*  ~~ DMB ~~ */
         if (m->useReadErr) 
             {
             /*  allocate similar index for read error condlikes */
@@ -6167,6 +6170,7 @@ int InitChainCondLikes (void)
                     return (ERROR);
                 }
 
+/*  ~~ DMB ~~ */
             if (m->useReadErr) 
                 {
                 /*  allocate readErrCls */
@@ -7742,7 +7746,7 @@ MrBFlt LogPrior (int chain)
                 {
                     /*  fixed  */
                 }
-            }
+            }  /*  ~~ DMB ~~ */
         else if (p->paramType == P_READERRRATE)
             {
             /* revmat parameter */
