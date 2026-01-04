@@ -1046,6 +1046,8 @@ typedef struct model
     MrBFlt      aaRevMatFix[190];
     MrBFlt      aaRevMatDir[190];
 
+
+/*  ~~ DMB ~~ */
     char        dimethylRatePr[100];
     MrBFlt      dimethylRateFix[2];
     MrBFlt      dimethylRateDir[2];
@@ -1418,6 +1420,7 @@ typedef struct modelinfo
     MrBFlt      lnLike[MAX_CHAINS];         /* log like for chain                           */
     CLFlt       *ancStateCondLikes;         /* ancestral state cond like array              */
 
+/*  ~~ DMB ~~ */
     /*  variables for handling methyl read errors at the tips */
     int         readErrClLength;
     int         numReadErrCls;

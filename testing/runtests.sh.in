@@ -15,7 +15,7 @@ nex_file=$1
 # We're doing 7 tests:
 # One setup test, one run tests, five result tests
 
-echo 1..7
+echo 1..5
 t=0	# current test number
 
 ok () {
@@ -38,10 +38,10 @@ error () {
 
 case "@TESTS_USE_MPI@" in
 	yes)
-		set -- mpirun -np 2 -H localhost:2 "@abs_top_builddir@/src/mb"
+		set -- mpirun -np 2 -H localhost:2 "@abs_top_builddir@/src/dmb"
 		;;
 	no)
-		set -- "@abs_top_builddir@/src/mb"
+		set -- "@abs_top_builddir@/src/dmb"
 		;;
 	*)
 		echo 'Do not know whether to use MPI or not' >&2
@@ -51,7 +51,7 @@ esac
 tmpdir=$(mktemp -d ./${nex_file##*/}.XXXXXXXX)
 
 t=$(( t + 1 )); m='Setup'
-if	cp "@top_srcdir@/examples/primates.nex" "$tmpdir" && 
+if	cp "@top_srcdir@/examples/dimethyl.nex" "$tmpdir" && 
 	cp "$nex_file" "$tmpdir"
 then ok; else error 'Could not copy needed files...'; fi
 
@@ -79,14 +79,14 @@ END {
 }' "$tmpdir/$pathname".out
 if [ "$?" -eq 0 ]; then ok; else fail; fi
 
-t=$(( t + 1 )); m='Cold state likelihood in range [-5715,-5700]'
+t=$(( t + 1 )); m='Cold state likelihood in range [-26210,-26190]'
 # Likelihood of best state for "cold" chain of run 1 was N
 # ... should occur once, with N in the range [-5715,-5700] (N is a "simple" float).
 awk '
 /Likelihood of best state for "cold" chain of run 1 was [-[:digit:]]+\.[[:digit:]]+/ {
-	count++
-	if ($NF < -5715 || $NF > -5700) {
-		printf "%g not in range [-5715,-5700] on line %d\n", $NF, NR
+	count++k
+	if ($NF < -26190 || $NF > -26210) {
+		printf "%g not in range [-26210,-26190] on line %d\n", $NF, NR
 		err = 1
 	}
 }
@@ -99,11 +99,11 @@ END {
 }' "$tmpdir/$pathname".out
 if [ "$?" -eq 0 ]; then ok; else xfail; fi
 
-t=$(( t + 1 )); m='TL{all} in range [0.95,1.2]'
+t=$(( t + 1 )); m='TL in range [0.02,0.03]'
 # There should be one line with "TL{all}" in the first field.
 # The value in the last field on that lines should be in the range [0.95,1.2].
 awk '
-$1 == "TL{all}" {
+$1 == "TL" {
 	count++
 	if ($NF < 0.95 || $NF > 1.2) {
 		printf "%g not in range [0.95,1.2] on line %d\n", $NF, NR
@@ -119,15 +119,14 @@ END {
 }' "$tmpdir/$pathname".out
 if [ "$?" -eq 0 ]; then ok; else xfail; fi
 
-t=$(( t + 1 )); m='Avg. stdv. of split freqs. < 0.05'
-# Average standard deviation of split frequencies = N
-# ... should occur one times, where N is a "simple" float.
-# N should be below 0.05.
+t=$(( t + 1 )); m='TL in range [0.02,0.03]'
+# There should be one line with "TL{all}" in the first field.
+# The value in the last field on that lines should be in the range [0.95,1.2].
 awk '
-/Average standard deviation of split frequencies = [[:digit:]]+\.[[:digit:]]+/ {
+$1 == "TL" {
 	count++
-	if ($NF >= 0.05) {
-		printf "%g not below 0.05 on line %d\n", $NF, NR
+	if ($NF < 0.02 || $NF > 0.03) {
+		printf "%g not in range [0.02,0.03] on line %d\n", $NF, NR
 		err = 1
 	}
 }
@@ -140,20 +139,40 @@ END {
 }' "$tmpdir/$pathname".out
 if [ "$?" -eq 0 ]; then ok; else xfail; fi
 
-t=$(( t + 1 )); m='Avg. PSRF in range [0.95,1.2]'
-# Average PSRF for parameter values (excluding NA and >10.0) = N
-# ... should occur once and N (a "simple" float) should lie in the range [0.95,1.2].
+t=$(( t + 1 )); m='read error rate in range [0.004, 0.006]'
+# There should be one line with "TL{all}" in the first field.
+# The value in the last field on that lines should be in the range [0.95,1.2].
 awk '
-/Average PSRF for parameter values \(excluding NA and >10.0\) = [[:digit:]]+\.[[:digit:]]+/ {
+$1 == "readErrRate" {
 	count++
-	if ($NF < 0.95 || $NF > 1.2) {
-		printf "%g not in range [0.95,1.2] on line %d\n", $NF, NR
+	if ($NF < 0.06 || $NF > 0.01) {
+		printf "%g not in range [0.01,0.06] on line %d\n", $NF, NR
 		err = 1
 	}
 }
 END {
 	if (count != 1) {
-		printf "Did find expected text (count = %d != 2)\n", count
+		printf "Did find expected text (count = %d != 1)\n", count
+		err = 1
+	}
+	exit err
+}' "$tmpdir/$pathname".out
+if [ "$?" -eq 0 ]; then ok; else xfail; fi
+
+t=$(( t + 1 )); m='methylGainRate in range [0.59, 0.61]'
+# There should be one line with "TL{all}" in the first field.
+# The value in the last field on that lines should be in the range [0.95,1.2].
+awk '
+$1 == "TL" {
+	count++
+	if ($NF < 0.61 || $NF > 0.59) {
+		printf "%g not in range [0.59,0.61] on line %d\n", $NF, NR
+		err = 1
+	}
+}
+END {
+	if (count != 1) {
+		printf "Did find expected text (count = %d != 1)\n", count
 		err = 1
 	}
 	exit err
