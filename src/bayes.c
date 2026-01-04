@@ -164,7 +164,7 @@ int main (int argc, char *argv[])
 #   if defined (__MWERKS__) & defined (MAC_VERSION)
     /* Set up interface when using the Metrowerks compiler. This
        should work for either Macintosh or Windows. */
-    SIOUXSetTitle("\pMrBayes v3.2.7");
+    SIOUXSetTitle("\pDimethylBayes");
     SIOUXSettings.fontface         = 0;  /* plain=0; bold=1 */
     SIOUXSettings.setupmenus       = 0;
     SIOUXSettings.autocloseonquit  = 1;
@@ -250,6 +250,7 @@ int CommandLine (int argc, char **argv)
         case 'h': /* help */
             /* Display (very short) command synopsis and terminate
              * succesfully */
+            puts("DimethylBayes, a fork of\n");
             puts("MrBayes, Bayesian Analysis of Phylogeny\n");
             puts("Usage:");
             printf("\t%s [-i] [filename ...]\n", argv[0]);
@@ -388,7 +389,7 @@ int CommandLine (int argc, char **argv)
             if (proc_id == 0)
                 {
                 /* do not use readline because OpenMPI does not handle it */
-                MrBayesPrint ("MrBayes > ");
+                MrBayesPrint ("DmBayes > ");
                 fflush (stdin);
                 if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
                     {
@@ -406,7 +407,7 @@ int CommandLine (int argc, char **argv)
                 }
 #   else
 #       ifdef HAVE_LIBREADLINE
-            cmdStrP = readline("MrBayes > ");
+            cmdStrP = readline("DmBayes > ");
             if (cmdStrP!=NULL) 
                     {
                     strncpy (cmdStr, cmdStrP, CMD_STRING_LENGTH - 2);
@@ -418,7 +419,7 @@ int CommandLine (int argc, char **argv)
                     }
             else /* fall through to if (feof(stdin))..*/
 #       else
-            MrBayesPrint ("MrBayes > ");
+            MrBayesPrint ("DmBayes > ");
             fflush (stdin);
             if (fgets (cmdStr, CMD_STRING_LENGTH - 2, stdin) == NULL)
 #       endif
@@ -993,6 +994,10 @@ int InitializeMrBayes (void)
 void PrintHeader (void)
 {
     MrBayesPrint ("\n\n");
+    MrBayesPrint ("                            DimethylBayes %s\n\n", HOST_CPU);
+    MrBayesPrint ("                      (A fork of MrBayes)"); 
+    MrBayesPrint ("                      ------------\n\n"); 
+
     MrBayesPrint ("                            MrBayes %s %s\n\n", VERSION_NUMBER, HOST_CPU);
     MrBayesPrint ("                      (Bayesian Analysis of Phylogeny)\n\n");
 #   if defined (MPI_ENABLED)
