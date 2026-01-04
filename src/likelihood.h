@@ -177,6 +177,8 @@ int       SetNucQMatrix (MrBFlt **a, int n, int whichChain, int division, MrBFlt
 
 int       UpDateCijk (int whichPart, int whichChain);
 
+
+/*  ~~ DMB ~~ */
 int       TiProbs_Dimethyl (TreeNode *p, int division, int chain);
 
 int       Likelihood_Dimethyl (TreeNode *p, int division, int chain, MrBFlt *lnL, int whichSitePats);

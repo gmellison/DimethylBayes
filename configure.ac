@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([DimethylBayes],[1.0.0])
+AC_INIT([MrBayes],[3.2.7a])
 
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_MACRO_DIRS([autotools])
@@ -74,12 +74,12 @@ AC_ARG_ENABLE([fma],
 # Optional feature: Enable/disable building of documentation under doc/
 # (enabled by default)
 
-#AC_ARG_ENABLE([doc],
-#    [AS_HELP_STRING([--enable-doc],
-#        [Enable building supplied documentation from sources in doc/
-#         @<:@default=yes@:>@])],
-#    [enable_doc=$enableval],
-#    [enable_doc=yes])
+AC_ARG_ENABLE([doc],
+    [AS_HELP_STRING([--enable-doc],
+        [Enable building supplied documentation from sources in doc/
+         @<:@default=yes@:>@])],
+    [enable_doc=$enableval],
+    [enable_doc=yes])
 
 # Optional external libraries:  MPI, Readline, Beagle
 
@@ -97,35 +97,35 @@ AC_ARG_WITH([readline],
 
 AC_ARG_WITH([beagle],
     [AS_HELP_STRING([--with-beagle[[=PATH]]],
-        [Build with the Beagle library @<:@default=check@:>@.
+        [Build with the Beagle library @<:@default=no@:>@.
         The PATH argument should be the prefix path where Beagle
         was installed, e.g. @S|@HOME/local, /opt/local etc.
         The paths /usr/local and /usr are checked if no path is specified.])],
     [],
-    [with_beagle=check])
+    [with_beagle=no])
 
 # Checks for programs.
 
 AC_PROG_INSTALL
 PKG_PROG_PKG_CONFIG
 
-#AM_CONDITIONAL([BUILD_DOC], [test "$enable_doc" = "yes"])
-#AM_COND_IF([BUILD_DOC], [
-#
-#    # Test whether we can rebuild the documentation.
-#    # This does not affect the pre-built PDF documents unless these are deleted.
-#    AC_PATH_PROG(PDFLATEX, [pdflatex])
-#    AC_PATH_PROG(BIBTEX, [bibtex])
-#    AC_PATH_PROG(LATEXMK, [latexmk])
-#
-#]) dnl AM_COND_IF([BUILD_DOC])
+AM_CONDITIONAL([BUILD_DOC], [test "$enable_doc" = "yes"])
+AM_COND_IF([BUILD_DOC], [
 
-#AM_CONDITIONAL([HAVE_LATEX], [test -n "$PDFLATEX" && test -n "$BIBTEX"])
-#AM_COND_IF([BUILD_DOC], [
-#    AM_COND_IF([HAVE_LATEX], [],
-#               [AC_MSG_WARN([pdflatex and/or bibtex is missing, documentation will not be rebuilt])])
-#])
-#AM_CONDITIONAL([HAVE_LATEXMK], [test -n "$LATEXMK"])
+    # Test whether we can rebuild the documentation.
+    # This does not affect the pre-built PDF documents unless these are deleted.
+    AC_PATH_PROG(PDFLATEX, [pdflatex])
+    AC_PATH_PROG(BIBTEX, [bibtex])
+    AC_PATH_PROG(LATEXMK, [latexmk])
+
+]) dnl AM_COND_IF([BUILD_DOC])
+
+AM_CONDITIONAL([HAVE_LATEX], [test -n "$PDFLATEX" && test -n "$BIBTEX"])
+AM_COND_IF([BUILD_DOC], [
+    AM_COND_IF([HAVE_LATEX], [],
+               [AC_MSG_WARN([pdflatex and/or bibtex is missing, documentation will not be rebuilt])])
+])
+AM_CONDITIONAL([HAVE_LATEXMK], [test -n "$LATEXMK"])
 
 # Determine if we can (and want) to use an MPI C compiler.
 AX_PROG_CC_MPI([test "x$with_mpi" != "xno"],
@@ -261,24 +261,31 @@ AC_DEFINE_UNQUOTED([COMPILER_VERSION],
 # Add warning flags to compile command line.
 AX_CFLAGS_WARN_ALL
 
-# Check for SIMD (etc.) extensions supported by hardware and compiler
-# (-msse2 etc.)
+# Check for SIMD (etc.) extensions supported by hardware and compiler.
 AX_EXT
 
-AS_IF([test "x$enable_sse" = "xno"],
-    [AC_DEFINE([DISABLE_SSE], [1],
-        [SSE code path should not be compiled.])])
-AS_IF([test "x$enable_avx" = "xno"],
-    [AC_DEFINE([DISABLE_AVX], [1],
-        [AVX code path should not be compiled.])])
-AS_IF([test "x$enable_fma" = "xno"],
-    [AC_DEFINE([DISABLE_FMA], [1],
-        [FMA code path should not be compiled.])])
+# Act on the above tests (which sets the "ax_cv_support_*_ext"
+# variables), and add appropriate flags to CFLAGS, or define
+# DISABLE_SSE, DISABLE_AVX, DISABLE_FMA if the extensions are not
+# supported or disabled by the user.
+AS_IF([test "x$enable_sse" = "xno" || test "x$ax_cv_support_sse2_ext" != "xyes"],
+    [AC_DEFINE([DISABLE_SSE], [1], [SSE code path should not be compiled.])],
+    [CFLAGS="$CFLAGS -msse"])
+AS_IF([test "x$enable_avx" = "xno" || test "x$ax_cv_support_avx_ext" != "xyes"],
+    [AC_DEFINE([DISABLE_AVX], [1], [AVX code path should not be compiled.])],
+    [CFLAGS="$CFLAGS -mavx"])
+AS_IF([test "x$enable_fma" = "xno" || test "x$ax_cv_support_fma3_ext" != "xyes"],
+    [AC_DEFINE([DISABLE_FMA], [1], [FMA code path should not be compiled.])],
+    [CFLAGS="$CFLAGS -mfma"])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([floor memset pow sqrt strchr])
 
 AC_CONFIG_FILES([Makefile
+                 doc/Makefile
+                 doc/SMME_paper/Makefile
+                 doc/manual/Makefile
+                 examples/Makefile
                  src/Makefile
                  testing/Makefile
 ])

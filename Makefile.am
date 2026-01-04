@@ -1,5 +1,9 @@
-dist_doc_DATA=	COPYING README 
+# dist_doc_DATA=	COPYING README NEWS
 
 EXTRA_DIST=	INSTALL
 
-SUBDIRS=	src
+SUBDIRS=	src testing
+
+# if BUILD_DOC
+# SUBDIRS+=	doc
+# endif
