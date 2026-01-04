@@ -13,9 +13,9 @@ fi
 nex_file=$1
 
 # We're doing 7 tests:
-# One setup test, one run tests, five result tests
+# One setup test, one run tests, six result tests
 
-echo 1..5
+echo 1..8
 t=0	# current test number
 
 ok () {
@@ -59,7 +59,7 @@ trap 'rm -rf "$tmpdir"' EXIT TERM INT
 
 pathname=${nex_file##*/}
 
-t=$(( t + 1 )); m='Ran MrBayes'
+t=$(( t + 1 )); m='Ran DmBayes'
 if	(cd "$tmpdir" && "$@" "$pathname") >"$tmpdir/$pathname.out"
 then ok; else error 'Could not create output...'; fi
 
@@ -79,14 +79,14 @@ END {
 }' "$tmpdir/$pathname".out
 if [ "$?" -eq 0 ]; then ok; else fail; fi
 
-t=$(( t + 1 )); m='Cold state likelihood in range [-26210,-26190]'
+t=$(( t + 1 )); m='Cold state likelihood in range [-26300,-26000]'
 # Likelihood of best state for "cold" chain of run 1 was N
 # ... should occur once, with N in the range [-5715,-5700] (N is a "simple" float).
 awk '
 /Likelihood of best state for "cold" chain of run 1 was [-[:digit:]]+\.[[:digit:]]+/ {
 	count++k
-	if ($NF < -26190 || $NF > -26210) {
-		printf "%g not in range [-26210,-26190] on line %d\n", $NF, NR
+	if ($NF < -26300 || $NF > -26000) {
+		printf "%g not in range [-26300,-26000] on line %d\n", $NF, NR
 		err = 1
 	}
 }
@@ -99,14 +99,14 @@ END {
 }' "$tmpdir/$pathname".out
 if [ "$?" -eq 0 ]; then ok; else xfail; fi
 
-t=$(( t + 1 )); m='TL in range [0.02,0.03]'
+t=$(( t + 1 )); m='TH in range [0.01,0.03]'
 # There should be one line with "TL{all}" in the first field.
 # The value in the last field on that lines should be in the range [0.95,1.2].
 awk '
-$1 == "TL" {
+$1 == "TH" {
 	count++
-	if ($NF < 0.95 || $NF > 1.2) {
-		printf "%g not in range [0.95,1.2] on line %d\n", $NF, NR
+	if ($2 < 0.01 || $2 > 0.03) {
+		printf "%g not in range [0.1,0.3] on line %d\n", $2, NR
 		err = 1
 	}
 }
@@ -119,34 +119,34 @@ END {
 }' "$tmpdir/$pathname".out
 if [ "$?" -eq 0 ]; then ok; else xfail; fi
 
-t=$(( t + 1 )); m='TL in range [0.02,0.03]'
-# There should be one line with "TL{all}" in the first field.
-# The value in the last field on that lines should be in the range [0.95,1.2].
-awk '
-$1 == "TL" {
-	count++
-	if ($NF < 0.02 || $NF > 0.03) {
-		printf "%g not in range [0.02,0.03] on line %d\n", $NF, NR
-		err = 1
-	}
-}
-END {
-	if (count != 1) {
-		printf "Did find expected text (count = %d != 1)\n", count
-		err = 1
-	}
-	exit err
-}' "$tmpdir/$pathname".out
-if [ "$?" -eq 0 ]; then ok; else xfail; fi
-
-t=$(( t + 1 )); m='read error rate in range [0.004, 0.006]'
+t=$(( t + 1 )); m=' read error rate in range [0.02,0.06]'
 # There should be one line with "TL{all}" in the first field.
 # The value in the last field on that lines should be in the range [0.95,1.2].
 awk '
 $1 == "readErrRate" {
 	count++
-	if ($NF < 0.06 || $NF > 0.01) {
-		printf "%g not in range [0.01,0.06] on line %d\n", $NF, NR
+	if ($2 < 0.02 || $2 > 0.06) {
+		printf "%g not in range [0.02,0.06] on line %d\n", $NF, NR
+		err = 1
+	}
+}
+END {
+	if (count != 1) {
+		printf "Did find expected text (count = %d != 1)\n", count
+		err = 1
+	}
+	exit err
+}' "$tmpdir/$pathname".out
+if [ "$?" -eq 0 ]; then ok; else xfail; fi
+
+t=$(( t + 1 )); m='clock rate in range [0.0005, 0.002]'
+# There should be one line with "TL{all}" in the first field.
+# The value in the last field on that lines should be in the range [0.95,1.2].
+awk '
+$1 == "clockrate" {
+	count++
+	if ($2 < 0.0005 || $2 > 0.002) {
+		printf "%g not in range [0.0005,0.002] on line %d\n", $NF, NR
 		err = 1
 	}
 }
@@ -160,12 +160,13 @@ END {
 if [ "$?" -eq 0 ]; then ok; else xfail; fi
 
 t=$(( t + 1 )); m='methylGainRate in range [0.59, 0.61]'
-# There should be one line with "TL{all}" in the first field.
+
+# There should be one line with "methylGainRate" in the first field.
 # The value in the last field on that lines should be in the range [0.95,1.2].
 awk '
-$1 == "TL" {
+$1 == "methylGainRate" {
 	count++
-	if ($NF < 0.61 || $NF > 0.59) {
+	if ($2 < 0.59 || $2 > 0.61) {
 		printf "%g not in range [0.59,0.61] on line %d\n", $NF, NR
 		err = 1
 	}

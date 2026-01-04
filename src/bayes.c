@@ -995,8 +995,8 @@ void PrintHeader (void)
 {
     MrBayesPrint ("\n\n");
     MrBayesPrint ("                            DimethylBayes %s\n\n", HOST_CPU);
-    MrBayesPrint ("                      (A fork of MrBayes)"); 
-    MrBayesPrint ("                      ------------\n\n"); 
+    MrBayesPrint ("                      (A fork of MrBayes) \n"); 
+    MrBayesPrint ("                      ---------------------------\n\n"); 
 
     MrBayesPrint ("                            MrBayes %s %s\n\n", VERSION_NUMBER, HOST_CPU);
     MrBayesPrint ("                      (Bayesian Analysis of Phylogeny)\n\n");
