@@ -1,5 +1,5 @@
 This is the GitHub repository for DimethylBayes, a fork of 
-MrBayes (https://github.com/NBISweden/MrBayes).    
+MrBayes ([link to MrBayes](https://github.com/NBISweden/MrBayes)).    
 DimethylBayes implements features useful for Bayesian inference 
 of phylogenies from DNA methylation data. All functionality of 
 MrBayes is included to enable combing model partitions of 
